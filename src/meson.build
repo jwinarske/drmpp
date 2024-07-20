@@ -3,12 +3,13 @@
 
 incdirs = [
     '../include/drmpp',
-    '../buildDir',
-    '../subprojects/rapidjson-v1.1.0/include'
+    '../subprojects/rapidjson-v1.1.0/include',
+    config_inc
 ]
 
 drmpp_sources = [
-    'kms/info/info.cc']
+    'kms/info/info.cc',
+]
 
 drmpp_lib = shared_library('drmpp',
                            drmpp_sources,

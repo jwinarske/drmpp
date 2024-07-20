@@ -27,14 +27,15 @@ drmpp_libversion = '@0@.@1@.@2@'.format(drmpp_soversion, current, revision)
 drmpp_name = 'drmpp-' + drmpp_api_version_string
 drmpp_full_name = 'libdrmpp-' + drmpp_api_version_string
 
+
 cc = meson.get_compiler('cpp')
-
-add_project_arguments('-D_GNU_SOURCE', language : ['cpp'])
-
-add_project_arguments(cc.get_supported_arguments([
-                                                     '-Wno-unused-parameter',
-                                                     '-Wno-missing-field-initializers',
-                                                 ]), language : ['c', 'cpp'])
+add_project_arguments(
+    cc.get_supported_arguments([
+                                   '-Wno-unused-parameter',
+                                   '-Wno-missing-field-initializers',
+                               ]),
+    language : ['cpp'],
+)
 
 prefix = get_option('prefix')
 libdir = join_paths(prefix, get_option('libdir'))
@@ -51,6 +52,7 @@ config_h = configure_file(
     output : 'config.h',
     configuration : cdata
 )
+config_inc = include_directories('.')
 
 cmake = import('cmake')
 
