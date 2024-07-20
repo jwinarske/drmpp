@@ -1,0 +1,9 @@
+#ifndef _DRMPP_CONFIG_H_
+#define _DRMPP_CONFIG_H_
+
+// Version number of package
+#mesondefine VERSION
+
+#define BUILD_DRMPP_STANDALONE 1
+
+#endif //_DRMPP_CONFIG_H_

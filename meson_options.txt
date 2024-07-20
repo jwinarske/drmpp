@@ -1,0 +1,11 @@
+option('examples',
+       type: 'boolean',
+       value: true,
+       description: 'build client examples'
+)
+
+option('libpci',
+       type: 'feature',
+       value: 'auto',
+       description: 'Print PCI device names via libpci'
+)
