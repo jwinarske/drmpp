@@ -136,6 +136,31 @@ namespace drmpp::input {
                         std::cout << node_info << std::endl;
                     }
                 }
+            } else if (key_syms[0] == XKB_KEY_u) {
+                if (utils::is_cmd_present("udevadm")) {
+                    const std::string path = "/dev/input/by-path";
+                    for (const auto &entry: std::filesystem::directory_iterator(path)) {
+                        auto device_name = read_symlink(entry).generic_string();
+
+                        std::string token = "../";
+                        auto i = device_name.find(token);
+                        if (i != std::string::npos) {
+                            device_name.erase(i, token.length());
+                        }
+
+                        LOG_INFO("{}:\t{}}", entry.path().generic_string(), device_name);
+
+                        std::string cmd =
+                                "udevadm info --attribute-walk --path=$(udevadm info --query=path --name=/dev/input/" +
+                                device_name + ")";
+                        std::string result;
+                        if (!utils::execute(cmd.c_str(), result)) {
+                            LOG_ERROR("failed to query /dev/input/{}", device_name);
+                            continue;
+                        }
+                        LOG_INFO("Input Device: {}\n{}", device_name, result);
+                    }
+                }
             }
         } else if (state == LIBINPUT_KEY_STATE_RELEASED) {
             if (repeat_.notify.xkb_scancode == xkb_scancode) {
