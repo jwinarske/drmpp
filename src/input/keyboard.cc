@@ -14,7 +14,13 @@
 #include "drmpp.h"
 
 namespace drmpp::input {
-    Keyboard::Keyboard(event_mask const &event_mask, const int32_t delay, const int32_t repeat) {
+    Keyboard::Keyboard(event_mask const &event_mask,
+                       const char * /* xkbmodel */,
+                       const char * /* xkblayout */,
+                       const char * /* xkbvariant */,
+                       const char * /* xkboptions */,
+                       const int32_t delay,
+                       const int32_t repeat) {
         event_mask_ = {
             .enabled = event_mask.enabled,
             .all = event_mask.all,

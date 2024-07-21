@@ -17,8 +17,6 @@
 #ifndef INCLUDE_DRMPP_H_
 #define INCLUDE_DRMPP_H_
 
-#define _POSIX_C_SOURCE 200809L
-
 #include <drm_fourcc.h>
 #include <fcntl.h>
 #include <cstdio>

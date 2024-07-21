@@ -39,7 +39,13 @@ namespace drmpp::input {
             bool all;
         };
 
-        explicit Keyboard(event_mask const &event_mask, int32_t delay = 500, int32_t repeat = 33);
+        explicit Keyboard(event_mask const &event_mask,
+                          const char *xkbmodel,
+                          const char *xkblayout,
+                          const char *xkbvariant,
+                          const char *xkboptions,
+                          int32_t delay = 500,
+                          int32_t repeat = 33);
 
         ~Keyboard();
 

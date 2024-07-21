@@ -46,7 +46,8 @@ namespace drmpp::input {
         };
 
         explicit Seat(bool disable_cursor,
-                      const char *ignore_events);
+                      const char *ignore_events,
+                      const char *seat_id = "seat0");
 
         ~Seat();
 
@@ -58,7 +59,7 @@ namespace drmpp::input {
 
         [[nodiscard]] void *get_user_data() const { return user_data_; }
 
-        //        [[nodiscard]] wl_seat *get_seat() const { return wl_seat_; }
+        //[[nodiscard]] wl_seat *get_seat() const { return wl_seat_; }
 
         [[nodiscard]] uint32_t get_capabilities() const { return capabilities_; }
 
@@ -66,7 +67,7 @@ namespace drmpp::input {
 
         [[nodiscard]] std::optional<Keyboard *> get_keyboard() const;
 
-        //        [[nodiscard]] std::optional<Pointer *> get_pointer() const;
+        //[[nodiscard]] std::optional<Pointer *> get_pointer() const;
 
         void set_event_mask(const char *ignore_events);
 

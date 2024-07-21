@@ -16,10 +16,11 @@ namespace drmpp::input {
      * and touchscreens.
      */
     Seat::Seat(const bool disable_cursor,
-               const char *ignore_events)
+               const char *ignore_events,
+               const char *seat_id)
         : udev_(udev_new()), disable_cursor_(disable_cursor) {
         li_ = libinput_udev_create_context(&interface_, nullptr, udev_);
-        libinput_udev_assign_seat(li_, "seat0");
+        libinput_udev_assign_seat(li_, seat_id);
 
         if (ignore_events) {
             set_event_mask(ignore_events);
@@ -54,11 +55,8 @@ namespace drmpp::input {
 
         const auto ev = libinput_get_event(li_);
         if (ev) {
-            libinput_device *dev = libinput_event_get_device(ev);
-            const char *name = libinput_device_get_name(dev);
-
             auto type = libinput_event_get_type(ev);
-            LOG_TRACE("Event: {}", static_cast<int>(type));
+            DLOG_TRACE("Event: {}", static_cast<int>(type));
 
             if (capabilities_init_ && type != LIBINPUT_EVENT_DEVICE_ADDED) {
                 capabilities_init_ = false;
@@ -67,9 +65,22 @@ namespace drmpp::input {
                     observer->notify_seat_capabilities(this, capabilities_);
                 }
             }
+            const auto dev = libinput_event_get_device(ev);
 
             switch (type) {
                 case LIBINPUT_EVENT_DEVICE_ADDED: {
+                    const auto name = libinput_device_get_name(dev);
+                    auto vendor = libinput_device_get_id_vendor(dev);
+                    auto product = libinput_device_get_id_product(dev);
+                    double width_mm, height_mm;
+                    libinput_device_get_size(dev, &width_mm, &height_mm);
+                    const auto output_name = libinput_device_get_output_name(dev);
+
+                    LOG_INFO(
+                        "[LIBINPUT_EVENT_DEVICE_ADDED] name: {}, vendor: {}, product: {}, width_mm: {} height_mm: {}, output_name: [{}]",
+                        name,
+                        vendor, product, width_mm, height_mm, output_name);
+
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TOUCH;
                         DLOG_TRACE("{}: Touch Added", name);
@@ -87,8 +98,17 @@ namespace drmpp::input {
                         DLOG_TRACE("{}: Pointer Added", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
-                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_KEYBOARD;
-                        keyboard_ = std::make_unique<drmpp::input::Keyboard>(event_mask_.keyboard);
+                        DLOG_TRACE("{}: Keyboard Added", name);
+                        auto udev_device = libinput_device_get_udev_device(dev);
+                        if (udev_device_get_property_value(udev_device, "ID_INPUT_KEYBOARD")) {
+                            keyboard_ = std::make_unique<Keyboard>(
+                                event_mask_.keyboard,
+                                udev_device_get_property_value(udev_device, "XKBMODEL"),
+                                udev_device_get_property_value(udev_device, "XKBLAYOUT"),
+                                udev_device_get_property_value(udev_device, "XKBVARIANT"),
+                                udev_device_get_property_value(udev_device, "XKBOPTIONS"));
+                            capabilities_ |= SeatObserver::SEAT_CAPABILITIES_KEYBOARD;
+                        }
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TABLET_PAD;
@@ -101,6 +121,18 @@ namespace drmpp::input {
                     break;
                 }
                 case LIBINPUT_EVENT_DEVICE_REMOVED: {
+                    libinput_device *dev = libinput_event_get_device(ev);
+                    const auto name = libinput_device_get_name(dev);
+                    auto vendor = libinput_device_get_id_vendor(dev);
+                    auto product = libinput_device_get_id_product(dev);
+                    double width_mm, height_mm;
+                    libinput_device_get_size(dev, &width_mm, &height_mm);
+                    const auto output_name = libinput_device_get_output_name(dev);
+                    LOG_INFO(
+                        "[LIBINPUT_EVENT_DEVICE_REMOVED] name: {}, vendor: {}, product: {}, width_mm: {} height_mm: {}, output_name: [{}]",
+                        name,
+                        vendor, product, width_mm, height_mm, output_name);
+
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
                         DLOG_TRACE("{}: Touch Removed", name);
                     }
