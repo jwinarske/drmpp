@@ -21,7 +21,9 @@ namespace drmpp::input {
         };
         xkb_context_ = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         xkb_context_set_log_verbosity(xkb_context_, XKB_LOG_LEVEL_INFO);
-        load_keymap();
+        if (!xkb_keymap_) {
+            load_keymap_from_file();
+        }
         handle_repeat_info(delay, repeat);
     }
 
@@ -51,7 +53,7 @@ namespace drmpp::input {
         observers_.remove(observer);
     }
 
-    void Keyboard::load_keymap(const char *keymap_file) {
+    void Keyboard::load_keymap_from_file(const char *keymap_file) {
         std::string file;
         do {
             if (!keymap_file) {
@@ -79,13 +81,14 @@ namespace drmpp::input {
                     exit(EXIT_FAILURE);
                 }
 
-                const std::string cmd = "xkbcomp " + display + " " + xkb_folder.string() + "/keymap.xkb";
+                xkb_folder /= "keymap.xkb";
+                const std::string cmd = "xkbcomp " + display + " " + xkb_folder.string();
 
                 std::string result;
                 if (!utils::execute(cmd.c_str(), result)) {
                     LOG_WARN("Failed to create keymap file");
                 }
-                file = xkb_folder.string() + "/keymap.xkb";
+                file = xkb_folder.string();
             } else {
                 file = keymap_file;
             }

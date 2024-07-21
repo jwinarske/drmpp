@@ -88,7 +88,7 @@ namespace drmpp::input {
             } notify;
         } repeat_{};
 
-        void load_keymap(const char *keymap_file = nullptr);
+        void load_keymap_from_file(const char *keymap_file = nullptr);
 
         static void xkb_log(xkb_context *context, xkb_log_level level, const char *format, va_list args);
 

@@ -69,27 +69,22 @@ namespace drmpp::utils {
   }
 
   static bool execute(const char *cmd, std::string &result) {
+    DLOG_TRACE("execute: cmd: {}", cmd);
     const auto fp = popen(cmd, "r");
     if (!fp) {
-      LOG_ERROR("[ExecuteCommand] Failed to Execute Command: ({}) {}", errno,
-                strerror(errno));
-      spdlog::error("Failed to Execute Command: {}", cmd);
+      LOG_ERROR("Failed to execute cmd: {}, ({}) {}", cmd, errno, strerror(errno));
       return false;
     }
 
-    DLOG_TRACE("[Command] Execute: {}", cmd);
-
-    auto buf = std::make_unique<char[]>(1024);
-    while (fgets(&buf[0], 1024, fp) != nullptr) {
-      result.append(&buf[0]);
+    char buffer[100]{};
+    std::rewind(fp);
+    while (std::fgets(buffer, sizeof(buffer), fp)) {
+      result.append(buffer);
     }
-    buf.reset();
+    DLOG_TRACE("execute: result: ({}) {}", result.size(), result);
 
-    DLOG_TRACE("[Command] Execute Result: [{}] {}", result.size(), result);
-
-    auto status = pclose(fp);
-    if (status == -1) {
-      LOG_ERROR("[ExecuteCommand] Failed to Close Pipe: ({}) {}", errno,
+    if (pclose(fp) == -1) {
+      LOG_ERROR("Failed to Close Pipe: ({}) {}", errno,
                 strerror(errno));
       return false;
     }
