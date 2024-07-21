@@ -107,7 +107,7 @@ public:
                         std::cout << node_info << std::endl;
                     }
                 }
-            } else if (xdg_key_symbols[0] == XKB_KEY_u) {
+            } else if (xdg_key_symbols[0] == XKB_KEY_p) {
                 std::scoped_lock<std::mutex> lock(cmd_mutex_);
                 if (drmpp::utils::is_cmd_present("udevadm")) {
                     const std::string path = "/dev/input/by-path";
@@ -121,10 +121,7 @@ public:
                         }
 
                         LOG_INFO("{}:\t{}}", entry.path().generic_string(), device_name);
-
-                        std::string cmd =
-                                "udevadm info --attribute-walk --path=$(udevadm info --query=path --name=/dev/input/" +
-                                device_name + ")";
+                        std::string cmd = "udevadm test $(udevadm info -q path -n /dev/input/" + device_name + ")";
                         std::string result;
                         if (!drmpp::utils::execute(cmd.c_str(), result)) {
                             LOG_ERROR("failed to query /dev/input/{}", device_name);

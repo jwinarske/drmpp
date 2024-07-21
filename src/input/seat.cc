@@ -70,35 +70,25 @@ namespace drmpp::input {
             switch (type) {
                 case LIBINPUT_EVENT_DEVICE_ADDED: {
                     const auto name = libinput_device_get_name(dev);
-                    auto vendor = libinput_device_get_id_vendor(dev);
-                    auto product = libinput_device_get_id_product(dev);
-                    double width_mm, height_mm;
-                    libinput_device_get_size(dev, &width_mm, &height_mm);
-                    const auto output_name = libinput_device_get_output_name(dev);
-
-                    LOG_INFO(
-                        "[LIBINPUT_EVENT_DEVICE_ADDED] name: {}, vendor: {}, product: {}, width_mm: {} height_mm: {}, output_name: [{}]",
-                        name,
-                        vendor, product, width_mm, height_mm, output_name);
 
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TOUCH;
-                        DLOG_TRACE("{}: Touch Added", name);
+                        DLOG_TRACE("Added Touch: {}", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_SWITCH;
-                        DLOG_TRACE("{}: Switch Added", name);
+                        DLOG_TRACE("Added Switch: {}", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_GESTURE)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_GESTURE;
-                        DLOG_TRACE("{}: Gesture Added", name);
+                        DLOG_TRACE("Added Gesture: {}", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_CAP_POINTER;
-                        DLOG_TRACE("{}: Pointer Added", name);
+                        DLOG_TRACE("Added Pointer: {}", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
-                        DLOG_TRACE("{}: Keyboard Added", name);
+                        DLOG_TRACE("Added Keyboard: {}", name);
                         auto udev_device = libinput_device_get_udev_device(dev);
                         if (udev_device_get_property_value(udev_device, "ID_INPUT_KEYBOARD")) {
                             keyboard_ = std::make_unique<Keyboard>(
@@ -112,11 +102,11 @@ namespace drmpp::input {
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TABLET_PAD;
-                        DLOG_TRACE("{}: Tablet Pad Added", name);
+                        DLOG_TRACE("Added Tablet Pad: {}", name);
                     }
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_TOOL)) {
                         capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TABLET_TOOL;
-                        DLOG_TRACE("{}: Tablet Tool Added", name);
+                        DLOG_TRACE("Added Tablet Tool: {}", name);
                     }
                     break;
                 }
