@@ -30,4 +30,6 @@
 #include "config.h"
 #include "logging/logging.h"
 
+#include "input/seat.h"
+
 #endif //INCLUDE_DRMPP_H_

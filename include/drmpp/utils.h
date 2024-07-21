@@ -40,7 +40,7 @@ namespace drmpp::utils {
    * @relation
    * flutter
    */
-  static std::string &trim(std::string &s, const char *t) {
+  [[maybe_unused]] static std::string &trim(std::string &s, const char *t) {
     return ltrim(rtrim(s, t), t);
   }
 
@@ -51,8 +51,7 @@ namespace drmpp::utils {
    * @relation
    * internal
    */
-  static std::vector<std::string> split(std::string str,
-                                        const std::string &token) {
+  [[maybe_unused]] static std::vector<std::string> split(std::string str, const std::string &token) {
     std::vector<std::string> result;
     while (!str.empty()) {
       const auto index = str.find(token);

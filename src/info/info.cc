@@ -43,7 +43,7 @@
 
 #include "drmpp.h"
 
-namespace drmpp::kms::info {
+namespace drmpp::info {
 	// according to CTA 861.G
 	enum {
 		HDMI_STATIC_METADATA_TYPE1 = 0

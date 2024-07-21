@@ -20,7 +20,7 @@
 #include <rapidjson/document.h>
 
 
-namespace drmpp::kms::info {
+namespace drmpp::info {
     struct DrmInfo {
         static std::string get_node_info(const char *path);
 

@@ -14,7 +14,11 @@
 #include "drmpp.h"
 
 namespace drmpp::input {
-    Keyboard::Keyboard(const int32_t delay, const int32_t repeat) {
+    Keyboard::Keyboard(event_mask const &event_mask, const int32_t delay, const int32_t repeat) {
+        event_mask_ = {
+            .enabled = event_mask.enabled,
+            .all = event_mask.all,
+        };
         xkb_context_ = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         xkb_context_set_log_verbosity(xkb_context_, XKB_LOG_LEVEL_INFO);
         load_keymap();
@@ -31,6 +35,20 @@ namespace drmpp::input {
         if (xkb_context_) {
             xkb_context_unref(xkb_context_);
         }
+    }
+
+    void Keyboard::register_observer(KeyboardObserver *observer, void *user_data) {
+        std::scoped_lock<std::mutex> lock(observers_mutex_);
+        observers_.push_back(observer);
+
+        if (user_data) {
+            user_data_ = user_data;
+        }
+    }
+
+    void Keyboard::unregister_observer(KeyboardObserver *observer) {
+        std::scoped_lock<std::mutex> lock(observers_mutex_);
+        observers_.remove(observer);
     }
 
     void Keyboard::load_keymap(const char *keymap_file) {
@@ -88,7 +106,7 @@ namespace drmpp::input {
         xkb_state_ = xkb_state_new(xkb_keymap_);
     }
 
-    void Keyboard::handle_key(libinput_event_keyboard *key_event) {
+    void Keyboard::handle_keyboard_event(libinput_event_keyboard *key_event) {
         const auto key = libinput_event_keyboard_get_key(key_event);
         const auto state = libinput_event_keyboard_get_key_state(key_event);
         auto time = libinput_event_keyboard_get_time(key_event);
@@ -117,52 +135,8 @@ namespace drmpp::input {
                 .key_syms = key_syms
             };
         }
-        if (state == LIBINPUT_KEY_STATE_PRESSED) {
-            if (key_syms[0] == XKB_KEY_Escape) {
-                exit(EXIT_SUCCESS);
-            } else if (key_syms[0] == XKB_KEY_d) {
-                if (utils::is_cmd_present("libinput")) {
-                    const std::string cmd = "libinput list-devices";
-                    std::string result;
-                    if (utils::execute(cmd.c_str(), result)) {
-                        LOG_INFO("{}", result);
-                    }
-                }
-            } else if (key_syms[0] == XKB_KEY_b) {
-                const std::string path = "/dev/dri";
-                for (const auto &entry: std::filesystem::directory_iterator(path)) {
-                    if (entry.path().string().find("card") != std::string::npos) {
-                        std::string node_info = kms::info::DrmInfo::get_node_info(entry.path().c_str());
-                        std::cout << node_info << std::endl;
-                    }
-                }
-            } else if (key_syms[0] == XKB_KEY_u) {
-                if (utils::is_cmd_present("udevadm")) {
-                    const std::string path = "/dev/input/by-path";
-                    for (const auto &entry: std::filesystem::directory_iterator(path)) {
-                        auto device_name = read_symlink(entry).generic_string();
 
-                        std::string token = "../";
-                        auto i = device_name.find(token);
-                        if (i != std::string::npos) {
-                            device_name.erase(i, token.length());
-                        }
-
-                        LOG_INFO("{}:\t{}}", entry.path().generic_string(), device_name);
-
-                        std::string cmd =
-                                "udevadm info --attribute-walk --path=$(udevadm info --query=path --name=/dev/input/" +
-                                device_name + ")";
-                        std::string result;
-                        if (!utils::execute(cmd.c_str(), result)) {
-                            LOG_ERROR("failed to query /dev/input/{}", device_name);
-                            continue;
-                        }
-                        LOG_INFO("Input Device: {}\n{}", device_name, result);
-                    }
-                }
-            }
-        } else if (state == LIBINPUT_KEY_STATE_RELEASED) {
+        if (state == LIBINPUT_KEY_STATE_RELEASED) {
             if (repeat_.notify.xkb_scancode == xkb_scancode) {
                 // stop timer
                 itimerspec its{};
@@ -170,11 +144,22 @@ namespace drmpp::input {
             }
         }
 
-        LOG_INFO(
+        DLOG_TRACE(
             "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
             time, xkb_scancode, key_repeats,
             state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
             xdg_keysym_count, key_syms[0]);
+
+        if (event_mask_.enabled && event_mask_.all) {
+            return;
+        }
+
+        std::scoped_lock<std::mutex> lock(observers_mutex_);
+        for (const auto observer: observers_) {
+            observer->notify_keyboard_xkb_v1_key(this, time,
+                                                 xkb_scancode, key_repeats, state,
+                                                 xdg_keysym_count, key_syms);
+        }
     }
 
     void Keyboard::handle_repeat_info(const int32_t delay, const int32_t rate) {
@@ -282,5 +267,10 @@ namespace drmpp::input {
         }
         LOG_WARN("Not able to detect xkb keymap values");
         return {};
+    }
+
+    void Keyboard::set_event_mask(event_mask const &event_mask) {
+        event_mask_.enabled = event_mask.enabled;
+        event_mask_.all = event_mask.all;
     }
 }

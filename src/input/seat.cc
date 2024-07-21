@@ -15,7 +15,7 @@ namespace drmpp::input {
      * It is used to handle input events from devices such as keyboards, pointers,
      * and touchscreens.
      */
-    Seat::Seat(bool disable_cursor,
+    Seat::Seat(const bool disable_cursor,
                const char *ignore_events)
         : udev_(udev_new()), disable_cursor_(disable_cursor) {
         li_ = libinput_udev_create_context(&interface_, nullptr, udev_);
@@ -35,6 +35,20 @@ namespace drmpp::input {
         }
     }
 
+    void Seat::register_observer(SeatObserver *observer, void *user_data) {
+        std::scoped_lock<std::mutex> lock(observers_mutex_);
+        observers_.push_back(observer);
+
+        if (user_data) {
+            user_data_ = user_data;
+        }
+    }
+
+    void Seat::unregister_observer(SeatObserver *observer) {
+        std::scoped_lock<std::mutex> lock(observers_mutex_);
+        observers_.remove(observer);
+    }
+
     bool Seat::run_once() {
         libinput_dispatch(li_);
 
@@ -44,46 +58,76 @@ namespace drmpp::input {
             const char *name = libinput_device_get_name(dev);
 
             auto type = libinput_event_get_type(ev);
+            LOG_TRACE("Event: {}", static_cast<int>(type));
+
+            if (capabilities_init_ && type != LIBINPUT_EVENT_DEVICE_ADDED) {
+                capabilities_init_ = false;
+                std::scoped_lock<std::mutex> lock(observers_mutex_);
+                for (const auto observer: observers_) {
+                    observer->notify_seat_capabilities(this, capabilities_);
+                }
+            }
+
             switch (type) {
                 case LIBINPUT_EVENT_DEVICE_ADDED: {
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
-                        LOG_INFO("{}: Touch Added", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
-                        LOG_INFO("{}: Switch Added", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_GESTURE)) {
-                        LOG_INFO("{}: Gesture Added", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
-                        LOG_INFO("{}: Pointer Added", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
-                        keyboard_ = std::make_unique<drmpp::input::Keyboard>();
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
-                        LOG_INFO("{}: Tablet Pad Added", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_TOOL)) {
-                        LOG_INFO("{}: Tablet Tool Added", name);
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TOUCH;
+                        DLOG_TRACE("{}: Touch Added", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_SWITCH;
+                        DLOG_TRACE("{}: Switch Added", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_GESTURE)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_GESTURE;
+                        DLOG_TRACE("{}: Gesture Added", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_CAP_POINTER;
+                        DLOG_TRACE("{}: Pointer Added", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_KEYBOARD;
+                        keyboard_ = std::make_unique<drmpp::input::Keyboard>(event_mask_.keyboard);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TABLET_PAD;
+                        DLOG_TRACE("{}: Tablet Pad Added", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_TOOL)) {
+                        capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TABLET_TOOL;
+                        DLOG_TRACE("{}: Tablet Tool Added", name);
                     }
                     break;
                 }
                 case LIBINPUT_EVENT_DEVICE_REMOVED: {
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
-                        LOG_INFO("{}: Touch Removed", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
-                        LOG_INFO("{}: Switch Removed", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_GESTURE)) {
-                        LOG_INFO("{}: Gesture Removed", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
-                        LOG_INFO("{}: Pointer Removed", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
+                        DLOG_TRACE("{}: Touch Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
+                        DLOG_TRACE("{}: Switch Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_GESTURE)) {
+                        DLOG_TRACE("{}: Gesture Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
+                        DLOG_TRACE("{}: Pointer Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
+                        DLOG_TRACE("{}: Keyboard Removed", name);
                         keyboard_.reset();
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
-                        LOG_INFO("{}: Tablet Pad Removed", name);
-                    } else if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_TOOL)) {
-                        LOG_INFO("{}: Tablet Tool Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_PAD)) {
+                        DLOG_TRACE("{}: Tablet Pad Removed", name);
+                    }
+                    if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TABLET_TOOL)) {
+                        DLOG_TRACE("{}: Tablet Tool Removed", name);
                     }
                     break;
                 }
                 case LIBINPUT_EVENT_KEYBOARD_KEY: {
                     const auto key_event = libinput_event_get_keyboard_event(ev);
-                    keyboard_->handle_key(key_event);
+                    keyboard_->handle_keyboard_event(key_event);
                     break;
                 }
                 case LIBINPUT_EVENT_POINTER_BUTTON:
@@ -150,11 +194,14 @@ namespace drmpp::input {
     }
 
     void Seat::set_event_mask(const char *ignore_events) {
-        std::string ignore_wayland_events(ignore_events);
+        std::string mask_events(ignore_events);
+        if (mask_events.empty()) {
+            return;
+        }
 
         std::string events;
-        events.reserve(ignore_wayland_events.size());
-        for (const char event: ignore_wayland_events) {
+        events.reserve(mask_events.size());
+        for (const char event: mask_events) {
             if (event != ' ' && event != '"')
                 events += event;
         }
@@ -163,47 +210,52 @@ namespace drmpp::input {
             events.begin(), events.end(), events.begin(),
             [](const char c) { return std::tolower(static_cast<unsigned char>(c)); });
 
+        std::stringstream ss(events);
+        while (ss.good()) {
+            std::string event;
+            getline(ss, event, ',');
 #if 0
-    std::stringstream ss(events);
-    while (ss.good()) {
-        std::string event;
-        getline(ss, event, ',');
-        if (event.rfind("pointer", 0) == 0) {
-            event_mask_.pointer.enabled = true;
-            if (event == "pointer-axis") {
-                event_mask_.pointer.axis = true;
-            } else if (event == "pointer-buttons") {
-                event_mask_.pointer.buttons = true;
-            } else if (event == "pointer-motion") {
-                event_mask_.pointer.motion = true;
-            } else if (event == "pointer") {
-                event_mask_.pointer.all = true;
-            }
-            if (pointer_) {
-                pointer_->set_event_mask(event_mask_.pointer);
-            }
-        } else if (event.rfind("keyboard", 0) == 0) {
-            event_mask_.keyboard.enabled = true;
-            if (event == "keyboard") {
-                event_mask_.keyboard.all = true;
-            }
-            if (keyboard_) {
-                keyboard_->set_event_mask(event_mask_.keyboard);
-            }
-        } else if (event.rfind("touch", 0) == 0) {
-            event_mask_.touch.all = true;
-            if (event == "touch") {
-                event_mask_.touch.enabled = true;
-            }
-            if (touch_) {
-                touch_->set_event_mask(event_mask_.touch);
-            }
-        } else {
-            LOG_WARN("Unknown Event Mask: [{}]", event);
-        }
-    }
+            if (event.rfind("pointer", 0) == 0) {
+                event_mask_.pointer.enabled = true;
+                if (event == "pointer-axis") {
+                    event_mask_.pointer.axis = true;
+                } else if (event == "pointer-buttons") {
+                    event_mask_.pointer.buttons = true;
+                } else if (event == "pointer-motion") {
+                    event_mask_.pointer.motion = true;
+                } else if (event == "pointer") {
+                    event_mask_.pointer.all = true;
+                }
+                if (pointer_) {
+                    pointer_->set_event_mask(event_mask_.pointer);
+                }
+            } else
 #endif
-        if (!ignore_wayland_events.empty()) {
+            if (event.rfind("keyboard", 0) == 0) {
+                event_mask_.keyboard.enabled = true;
+                if (event == "keyboard") {
+                    event_mask_.keyboard.all = true;
+                }
+                if (keyboard_) {
+                    keyboard_->set_event_mask(event_mask_.keyboard);
+                }
+            }
+#if 0
+            else if (event.rfind("touch", 0) == 0) {
+                event_mask_.touch.all = true;
+                if (event == "touch") {
+                    event_mask_.touch.enabled = true;
+                }
+                if (touch_) {
+                    touch_->set_event_mask(event_mask_.touch);
+                }
+            }
+#endif
+            else {
+                LOG_WARN("Unknown Event Mask: [{}]", event);
+            }
+        }
+        if (!mask_events.empty()) {
             event_mask_print();
         }
     }

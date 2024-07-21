@@ -1,6 +1,8 @@
 #ifndef INCLUDE_DRMPP_INPUT_KEYBOARD_H_
 #define INCLUDE_DRMPP_INPUT_KEYBOARD_H_
 
+#include <list>
+#include <mutex>
 #include <utility>
 #include <string>
 
@@ -9,13 +11,49 @@
 #include <xkbcommon/xkbcommon.h>
 
 namespace drmpp::input {
+    class Keyboard;
+
+    class KeyboardObserver {
+    public:
+        enum KeyState {
+            KEY_STATE_RELEASE,
+            KEY_STATE_PRESS,
+        };
+
+        virtual ~KeyboardObserver() = default;
+
+        virtual void notify_keyboard_xkb_v1_key(
+            Keyboard *keyboard,
+            uint32_t time,
+            uint32_t xkb_scancode,
+            bool keymap_key_repeats,
+            uint32_t state,
+            int xdg_key_symbol_count,
+            const xkb_keysym_t *xdg_key_symbols) = 0;
+    };
+
     class Keyboard {
     public:
-        explicit Keyboard(int32_t delay = 500, int32_t repeat = 33);
+        struct event_mask {
+            bool enabled;
+            bool all;
+        };
+
+        explicit Keyboard(event_mask const &event_mask, int32_t delay = 500, int32_t repeat = 33);
 
         ~Keyboard();
 
-        void handle_key(libinput_event_keyboard *key_event);
+        void register_observer(KeyboardObserver *observer, void *user_data = nullptr);
+
+        void unregister_observer(KeyboardObserver *observer);
+
+        void set_user_data(void *user_data) { user_data_ = user_data; }
+
+        [[nodiscard]] void *get_user_data() const { return user_data_; }
+
+        void handle_keyboard_event(libinput_event_keyboard *key_event);
+
+        void set_event_mask(event_mask const &event_mask);
 
         // Disallow copy and assign.
         Keyboard(const Keyboard &) = delete;
@@ -23,6 +61,11 @@ namespace drmpp::input {
         Keyboard &operator=(const Keyboard &) = delete;
 
     private:
+        std::list<KeyboardObserver *> observers_{};
+        std::mutex observers_mutex_;
+        void *user_data_{};
+        event_mask event_mask_{};
+
         xkb_context *xkb_context_{};
         xkb_keymap *xkb_keymap_{};
         xkb_state *xkb_state_{};
