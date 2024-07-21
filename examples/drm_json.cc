@@ -59,7 +59,7 @@ public:
         const std::string path = "/dev/dri";
         for (const auto &entry: std::filesystem::directory_iterator(path)) {
             if (entry.path().string().find("card") != std::string::npos) {
-                std::string node_info = drmpp::kms::info::DrmInfo::get_node_info(entry.path().c_str());
+                std::string node_info = drmpp::info::DrmInfo::get_node_info(entry.path().c_str());
                 std::cout << node_info << std::endl;
             }
         }

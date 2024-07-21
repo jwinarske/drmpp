@@ -53,44 +53,43 @@ namespace drmpp::input {
 
     void Keyboard::load_keymap(const char *keymap_file) {
         std::string file;
-        if (!keymap_file) {
-            if (!utils::is_cmd_present("xkbcomp")) {
-                LOG_ERROR("xkbcomp is required to create keymap file");
-                return;
-            }
+        do {
+            if (!keymap_file) {
+                std::filesystem::path xkb_folder = getenv("HOME");
+                if (xkb_folder.empty()) {
+                    LOG_CRITICAL("$HOME is not set.  Failed to load keymap");
+                    exit(EXIT_FAILURE);
+                }
 
-            std::filesystem::path xkb_folder = getenv("HOME");
-            if (xkb_folder.empty()) {
-                LOG_CRITICAL("$HOME is not set.  Failed to load keymap");
-                exit(EXIT_FAILURE);
-            }
+                xkb_folder /= ".xkb";
+                if (!exists(xkb_folder)) {
+                    create_directory(xkb_folder);
+                }
 
-            xkb_folder /= ".xkb";
-            if (!exists(xkb_folder)) {
-                create_directory(xkb_folder);
-            }
+                const std::string display = getenv("DISPLAY");
+                if (display.empty()) {
+                    xkb_folder /= "keymap.xkb";
+                    LOG_DEBUG("Loading {}", xkb_folder.string());
+                    file.assign(xkb_folder);
+                    break;
+                }
 
-            if (!utils::is_cmd_present("xkbcomp")) {
-                LOG_CRITICAL("xkbcomp is required to create the keymap file");
-                exit(EXIT_FAILURE);
-            }
+                if (!utils::is_cmd_present("xkbcomp")) {
+                    LOG_CRITICAL("xkbcomp is required to create the keymap file");
+                    exit(EXIT_FAILURE);
+                }
 
-            const std::string display = getenv("DISPLAY");
-            if (xkb_folder.empty()) {
-                LOG_CRITICAL("$DISPLAY is not set");
-                exit(EXIT_FAILURE);
-            }
+                const std::string cmd = "xkbcomp " + display + " " + xkb_folder.string() + "/keymap.xkb";
 
-            const std::string cmd = "xkbcomp " + display + " " + xkb_folder.string() + "/keymap.xkb";
-
-            std::string result;
-            if (!utils::execute(cmd.c_str(), result)) {
-                LOG_WARN("Failed to create keymap file");
+                std::string result;
+                if (!utils::execute(cmd.c_str(), result)) {
+                    LOG_WARN("Failed to create keymap file");
+                }
+                file = xkb_folder.string() + "/keymap.xkb";
+            } else {
+                file = keymap_file;
             }
-            file = xkb_folder.string() + "/keymap.xkb";
-        } else {
-            file = keymap_file;
-        }
+        } while (false);
 
         DLOG_DEBUG("Loading keymap file: {}", file);
         FILE *f = fopen(file.c_str(), "r");

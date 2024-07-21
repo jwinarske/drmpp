@@ -87,8 +87,10 @@ public:
         const xkb_keysym_t *xdg_key_symbols) override {
         if (state == LIBINPUT_KEY_STATE_PRESSED) {
             if (xdg_key_symbols[0] == XKB_KEY_Escape) {
+                std::scoped_lock<std::mutex> lock(cmd_mutex_);
                 exit(EXIT_SUCCESS);
             } else if (xdg_key_symbols[0] == XKB_KEY_d) {
+                std::scoped_lock<std::mutex> lock(cmd_mutex_);
                 if (drmpp::utils::is_cmd_present("libinput")) {
                     const std::string cmd = "libinput list-devices";
                     std::string result;
@@ -97,6 +99,7 @@ public:
                     }
                 }
             } else if (xdg_key_symbols[0] == XKB_KEY_b) {
+                std::scoped_lock<std::mutex> lock(cmd_mutex_);
                 const std::string path = "/dev/dri";
                 for (const auto &entry: std::filesystem::directory_iterator(path)) {
                     if (entry.path().string().find("card") != std::string::npos) {
@@ -105,6 +108,7 @@ public:
                     }
                 }
             } else if (xdg_key_symbols[0] == XKB_KEY_u) {
+                std::scoped_lock<std::mutex> lock(cmd_mutex_);
                 if (drmpp::utils::is_cmd_present("udevadm")) {
                     const std::string path = "/dev/input/by-path";
                     for (const auto &entry: std::filesystem::directory_iterator(path)) {
@@ -141,6 +145,7 @@ public:
 private:
     std::unique_ptr<Logging> logging_;
     std::unique_ptr<drmpp::input::Seat> seat_;
+    std::mutex cmd_mutex_{};
 };
 
 int main(const int argc, char **argv) {
