@@ -65,8 +65,7 @@ public:
         return seat_->run_once();
     }
 
-private
-:
+private:
     std::unique_ptr<Logging> logging_;
     std::unique_ptr<drmpp::input::Seat> seat_;
 };

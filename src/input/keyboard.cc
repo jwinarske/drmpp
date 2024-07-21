@@ -9,7 +9,7 @@
 #include <iostream>
 #include <utils.h>
 
-#include <kms/info/info.h>
+#include "info/info.h"
 
 #include "drmpp.h"
 

@@ -10,7 +10,7 @@ incdirs = [
 drmpp_sources = [
     'input/seat.cc',
     'input/keyboard.cc',
-    'kms/info/info.cc',
+    'info/info.cc',
 ]
 
 drmpp_lib = shared_library('drmpp',

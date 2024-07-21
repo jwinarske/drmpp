@@ -39,7 +39,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-#include "kms/info/info.h"
+#include "info/info.h"
 
 #include "drmpp.h"
 
@@ -117,11 +117,11 @@ namespace drmpp::kms::info {
 		}
 
 		rapidjson::Value obj(rapidjson::kObjectType);
-		obj.AddMember("sysname", std::string(utsname.sysname, std::strlen(utsname.sysname)),
+		obj.AddMember("sysname", rapidjson::Value(utsname.sysname, std::strlen(utsname.sysname), allocator).Move(),
 		              allocator);
-		obj.AddMember("release", std::string(utsname.release, std::strlen(utsname.release)),
+		obj.AddMember("release", rapidjson::Value(utsname.release, std::strlen(utsname.release), allocator).Move(),
 		              allocator);
-		obj.AddMember("version", std::string(utsname.version, std::strlen(utsname.version)),
+		obj.AddMember("version", rapidjson::Value(utsname.version, std::strlen(utsname.version), allocator).Move(),
 		              allocator);
 		obj.AddMember("tainted", tainted_info(), allocator);
 		return obj;
@@ -135,14 +135,14 @@ namespace drmpp::kms::info {
 		}
 
 		rapidjson::Value obj(rapidjson::kObjectType);
-		obj.AddMember("name", std::string(ver->name, std::strlen(ver->name)), allocator);
-		obj.AddMember("desc", std::string(ver->desc, std::strlen(ver->desc)), allocator);
+		obj.AddMember("name", rapidjson::Value(ver->name, std::strlen(ver->name), allocator).Move(), allocator);
+		obj.AddMember("desc", rapidjson::Value(ver->desc, std::strlen(ver->desc), allocator).Move(), allocator);
 
 		rapidjson::Value ver_obj(rapidjson::kObjectType);
 		ver_obj.AddMember("major", ver->version_major, allocator);
 		ver_obj.AddMember("minor", ver->version_minor, allocator);
 		ver_obj.AddMember("patch", ver->version_patchlevel, allocator);
-		ver_obj.AddMember("date", std::string(ver->date, std::strlen(ver->date)), allocator);
+		ver_obj.AddMember("date", rapidjson::Value(ver->date, std::strlen(ver->date), allocator).Move(), allocator);
 		obj.AddMember("version", ver_obj, allocator);
 
 		drmFreeVersion(ver);
@@ -227,7 +227,8 @@ namespace drmpp::kms::info {
 				device_data_obj.AddMember("compatible", compatible_arr, allocator);
 
 				bus_data_obj.AddMember(
-					"fullname", std::string(platform_bus->fullname, strlen(platform_bus->fullname)),
+					"fullname",
+					rapidjson::Value(platform_bus->fullname, strlen(platform_bus->fullname), allocator).Move(),
 					allocator);
 				break;
 			}
@@ -244,7 +245,8 @@ namespace drmpp::kms::info {
 				device_data_obj.AddMember("compatible", compatible_arr, allocator);
 
 				bus_data_obj.AddMember(
-					"fullname", std::string(host1x_bus->fullname, std::strlen(host1x_bus->fullname)),
+					"fullname",
+					rapidjson::Value(host1x_bus->fullname, std::strlen(host1x_bus->fullname), allocator).Move(),
 					allocator);
 				break;
 			}
@@ -318,7 +320,7 @@ namespace drmpp::kms::info {
 		obj.AddMember("vrefresh", rapidjson::Value().SetUint64(mode->vrefresh), allocator);
 		obj.AddMember("flags", rapidjson::Value().SetUint64(mode->flags), allocator);
 		obj.AddMember("type", rapidjson::Value().SetUint64(mode->type), allocator);
-		obj.AddMember("name", std::string(mode->name, std::strlen(mode->name)), allocator);
+		obj.AddMember("name", rapidjson::Value(mode->name, std::strlen(mode->name), allocator).Move(), allocator);
 		return obj;
 	}
 
@@ -548,7 +550,8 @@ namespace drmpp::kms::info {
 					for (int j = 0; j < prop->count_enums; ++j) {
 						rapidjson::Value item_obj(rapidjson::kObjectType);
 						item_obj.AddMember(
-							"name", std::string(prop->enums[j].name, std::strlen(prop->enums[j].name)),
+							"name",
+							rapidjson::Value(prop->enums[j].name, std::strlen(prop->enums[j].name), allocator).Move(),
 							allocator);
 						item_obj.AddMember("value", rapidjson::Value().SetUint64(prop->enums[j].value),
 						                   allocator);
@@ -854,7 +857,7 @@ namespace drmpp::kms::info {
 		node_info(path, document);
 
 		rapidjson::StringBuffer sb;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+		rapidjson::Writer writer(sb);
 		document.Accept(writer);
 
 		return sb.GetString();

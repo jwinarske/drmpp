@@ -22,7 +22,7 @@
 
 #include "drmpp.h"
 
-#include "kms/info/info.h"
+#include "info/info.h"
 
 
 struct Configuration {
