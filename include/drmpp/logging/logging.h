@@ -29,6 +29,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#define DLOG_INFO     SPDLOG_INFO
 #define DLOG_DEBUG    SPDLOG_DEBUG
 #define DLOG_TRACE    SPDLOG_TRACE
 #define DLOG_CRITICAL SPDLOG_CRITICAL

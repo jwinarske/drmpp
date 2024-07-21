@@ -12,3 +12,11 @@ executable('drm-json', ['drm_json.cc'],
                drmp_dep,
            ],
 )
+
+executable('drm-input', ['drm_input.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+)

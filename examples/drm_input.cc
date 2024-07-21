@@ -16,14 +16,17 @@
 
 #include <csignal>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 
+#include <libinput.h>
+
 #include <cxxopts.hpp>
+#include <input/keyboard.h>
 
 #include "drmpp.h"
 
-#include "kms/info/info.h"
-
+#include "input/seat.h"
 
 struct Configuration {
 };
@@ -49,31 +52,29 @@ void handle_signal(const int signal) {
 
 class App final {
 public:
-    explicit App(const Configuration & /* config */)
+    explicit App(const Configuration & /*config */)
         : logging_(std::make_unique<Logging>()) {
+        seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     }
 
-    ~App() = default;
+    ~App() {
+        seat_.reset();
+    }
 
     [[nodiscard]] bool run() const {
-        const std::string path = "/dev/dri";
-        for (const auto &entry: std::filesystem::directory_iterator(path)) {
-            if (entry.path().string().find("card") != std::string::npos) {
-                std::string node_info = drmpp::kms::info::DrmInfo::get_node_info(entry.path().c_str());
-                std::cout << node_info << std::endl;
-            }
-        }
-        return false;
+        return seat_->run_once();
     }
 
-private:
+private
+:
     std::unique_ptr<Logging> logging_;
+    std::unique_ptr<drmpp::input::Seat> seat_;
 };
 
 int main(const int argc, char **argv) {
     std::signal(SIGINT, handle_signal);
 
-    cxxopts::Options options("drm-json", "DRM info to JSON");
+    cxxopts::Options options("drm-input", "Input information");
     options.set_width(80)
             .set_tab_expansion()
             .allow_unrecognised_options()
@@ -86,7 +87,7 @@ int main(const int argc, char **argv) {
         exit(EXIT_SUCCESS);
     }
 
-    const App app({});
+    App app({});
 
     while (gRunning && app.run()) {
     }

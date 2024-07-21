@@ -64,10 +64,11 @@ opt_var.add_cmake_defines({ 'SPDLOG_BUILD_PIC' : true })
 spdlog = cmake.subproject('spdlog-1.13.0', options : opt_var)
 spdlog_dep = spdlog.dependency('spdlog')
 
-
-libpci = dependency('libpci', required : get_option('libpci'))
-drm_dep = dependency('libdrm', include_type : 'system', version : '>= 2.4.108')
-
+drm_dep = dependency('libdrm', include_type : 'system')
+input_dep = dependency('libinput', include_type : 'system', version : '>= 1.15.5')
+pci_dep = dependency('libpci', required : get_option('libpci'))
+udev_dep = dependency('libudev', include_type : 'system')
+xkbcommon_dep = dependency('xkbcommon', include_type : 'system')
 
 subdir('src')
 
