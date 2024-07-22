@@ -113,15 +113,6 @@ namespace drmpp::input {
                 case LIBINPUT_EVENT_DEVICE_REMOVED: {
                     libinput_device *dev = libinput_event_get_device(ev);
                     const auto name = libinput_device_get_name(dev);
-                    auto vendor = libinput_device_get_id_vendor(dev);
-                    auto product = libinput_device_get_id_product(dev);
-                    double width_mm, height_mm;
-                    libinput_device_get_size(dev, &width_mm, &height_mm);
-                    const auto output_name = libinput_device_get_output_name(dev);
-                    LOG_INFO(
-                        "[LIBINPUT_EVENT_DEVICE_REMOVED] name: {}, vendor: {}, product: {}, width_mm: {} height_mm: {}, output_name: [{}]",
-                        name,
-                        vendor, product, width_mm, height_mm, output_name);
 
                     if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
                         DLOG_TRACE("{}: Touch Removed", name);

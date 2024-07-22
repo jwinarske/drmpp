@@ -5,6 +5,9 @@
 #include <vector>
 
 #include <cerrno>
+#include <cctype>
+#include <iomanip>
+#include <ostream>
 
 #include "drmpp.h"
 
@@ -102,5 +105,68 @@ namespace drmpp::utils {
     }
     return false;
   }
+
+  class IosFlagSaver {
+  public:
+    explicit IosFlagSaver(std::ostream &_ios) : ios(_ios), f(_ios.flags()) {
+    }
+
+    ~IosFlagSaver() { ios.flags(f); }
+
+    IosFlagSaver(const IosFlagSaver &rhs) = delete;
+
+    IosFlagSaver &operator=(const IosFlagSaver &rhs) = delete;
+
+  private:
+    std::ostream &ios;
+    std::ios::fmtflags f;
+  };
+
+  template<unsigned RowSize, bool ShowAscii>
+  struct CustomHexdump {
+    CustomHexdump(const uint8_t *data, size_t length)
+      : mData(data), mLength(length) {
+    }
+
+    const uint8_t *mData;
+    const size_t mLength;
+  };
+
+  template<unsigned row_size, bool show_ascii>
+  std::ostream &operator<<(std::ostream &out,
+                           const CustomHexdump<row_size, show_ascii> &dump) {
+    IosFlagSaver ios_fs(out);
+
+    out.fill('0');
+    for (size_t i = 0; i < dump.mLength; i += row_size) {
+      out << "0x" << std::setw(6) << std::hex << i << ": ";
+      for (size_t j = 0; j < row_size; ++j) {
+        if (i + j < dump.mLength) {
+          out << std::hex << std::setw(2) << static_cast<int>(dump.mData[i + j])
+              << " ";
+        } else {
+          out << "   ";
+        }
+      }
+
+      out << " ";
+      if (show_ascii) {
+        for (size_t j = 0; j < row_size; ++j) {
+          if (i + j < dump.mLength) {
+            if (std::isprint(dump.mData[i + j])) {
+              out << static_cast<char>(dump.mData[i + j]);
+            } else {
+              out << ".";
+            }
+          }
+        }
+      }
+      out << std::endl;
+    }
+
+    return out;
+  }
+
+  typedef CustomHexdump<16, true> Hexdump;
 }
 #endif // INCLUDE_DRMPP_UTILS_H_

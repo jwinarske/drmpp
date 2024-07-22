@@ -131,6 +131,47 @@ public:
                     }
                 }
             }
+        } else if (xdg_key_symbols[0] == XKB_KEY_e) {
+            std::scoped_lock<std::mutex> lock(cmd_mutex_);
+            if (drmpp::utils::is_cmd_present("find")) {
+                std::string result;
+                if (!drmpp::utils::execute("find /sys/devices -iname edid", result)) {
+                    LOG_ERROR("Failed to find edid");
+                    return;
+                }
+                auto condidates = drmpp::utils::split(result, "\n");
+                for (const auto &candidate: condidates) {
+                    if (candidate.empty()) {
+                        continue;
+                    }
+                    FILE *f = fopen(candidate.c_str(), "r");
+                    if (!f) {
+                        DLOG_DEBUG("Failed to load file: {}", candidate);
+                        return;
+                    }
+
+                    static uint8_t raw[32 * 1024];
+                    size_t size{};
+                    while (!feof(f)) {
+                        size += fread(&raw[size], 1, sizeof(raw) - size, f);
+                        if (ferror(f)) {
+                            LOG_ERROR("fread failed");
+                            break;
+                        }
+                        if (size >= sizeof(raw)) {
+                            fprintf(stderr, "input too large\n");
+                            break;
+                        }
+                    }
+                    fclose(f);
+
+                    if (size) {
+                        std::stringstream ss;
+                        ss << drmpp::utils::Hexdump(raw, size);
+                        LOG_INFO("[{}]\n{}", candidate, ss.str());
+                    }
+                }
+            }
         }
         LOG_INFO(
             "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
