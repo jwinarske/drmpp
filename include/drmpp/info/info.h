@@ -17,6 +17,7 @@
 #ifndef INCLUDE_DRMPP_KMS_INFO_INFO_H_
 #define INCLUDE_DRMPP_KMS_INFO_INFO_H_
 
+#include <xf86drmMode.h>
 #include <rapidjson/document.h>
 
 
