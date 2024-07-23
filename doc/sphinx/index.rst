@@ -1,12 +1,12 @@
 
-Welcome to drmpp's documentation!
+Welcome to drmpp documentation!
 =================================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   readme
+   toc/readme.md
 
 Indices and tables
 ==================
