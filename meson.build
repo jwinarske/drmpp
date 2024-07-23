@@ -61,6 +61,7 @@ opt_var.add_cmake_defines({ 'CMAKE_VERBOSE_MAKEFILE' : true })
 opt_var.add_cmake_defines({ 'SPDLOG_NO_EXCEPTIONS' : true })
 opt_var.add_cmake_defines({ 'SPDLOG_NO_THREAD_ID' : true })
 opt_var.add_cmake_defines({ 'SPDLOG_BUILD_PIC' : true })
+opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW'})
 spdlog = cmake.subproject('spdlog-1.13.0', options : opt_var)
 spdlog_dep = spdlog.dependency('spdlog')
 
