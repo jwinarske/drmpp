@@ -1,0 +1,6 @@
+[submodule "subprojects/libliftoff"]
+	path = subprojects/libliftoff
+	url = https://gitlab.freedesktop.org/emersion/libliftoff.git
+[submodule "subprojects/libdisplay-info"]
+	path = subprojects/libdisplay-info
+	url = https://gitlab.freedesktop.org/emersion/libdisplay-info.git
