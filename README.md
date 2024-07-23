@@ -15,7 +15,7 @@ Locate your compiled keymap file at `$HOME/.xkb/keymap.xkb`
 
 You can create on a desktop machine running X11 or Wayland:
 
-    mkdir -p $HOME/.xkb/keymap.xkb
+    mkdir -p $HOME/.xkb
     xkbcomp $DISPLAY $HOME/.xkb/keymap.xkb
 
 Ignore any warnings
