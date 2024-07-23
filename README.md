@@ -20,8 +20,6 @@ You can create on a desktop machine running X11 or Wayland:
 
 Ignore any warnings
 
-Copy `$HOME/.xkb/keymap.xkb` to `$HOME/.xkb/keymap.xkb`
-
 ### TTY Terminal
 
 The system compositor has control of the DRM driver when active.  You can suspend this access by switching to a TTY terminal.
