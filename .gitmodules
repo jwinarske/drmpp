@@ -4,3 +4,12 @@
 [submodule "subprojects/libdisplay-info"]
 	path = subprojects/libdisplay-info
 	url = https://gitlab.freedesktop.org/emersion/libdisplay-info.git
+[submodule "subprojects/cxxopts"]
+	path = subprojects/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
+[submodule "subprojects/spdlog"]
+	path = subprojects/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "subprojects/rapidjson"]
+	path = subprojects/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

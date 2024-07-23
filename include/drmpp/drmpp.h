@@ -19,15 +19,15 @@
 
 #include <drm_fourcc.h>
 #include <fcntl.h>
-#include <cstdio>
-#include <cstring>
 #include <unistd.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#include <cstdio>
+#include <cstring>
 
 #include "config.h"
 #include "logging/logging.h"
 
 #include "input/seat.h"
 
-#endif //INCLUDE_DRMPP_H_
+#endif  // INCLUDE_DRMPP_H_

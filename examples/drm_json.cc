@@ -1,5 +1,5 @@
 /*
-* Copyright 2024 drmpp contributors
+ * Copyright (c) 2024 The drmpp Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,7 @@
 
 #include "info/info.h"
 
-
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -42,54 +40,54 @@ static volatile bool gRunning = true;
  * @return void
  */
 void handle_signal(const int signal) {
-    if (signal == SIGINT) {
-        gRunning = false;
-    }
+  if (signal == SIGINT) {
+    gRunning = false;
+  }
 }
 
 class App final {
-public:
-    explicit App(const Configuration & /* config */)
-        : logging_(std::make_unique<Logging>()) {
+ public:
+  explicit App(const Configuration& /* config */)
+      : logging_(std::make_unique<Logging>()) {}
+
+  ~App() = default;
+
+  [[nodiscard]] static bool run() {
+    const std::string path = "/dev/dri";
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+      if (entry.path().string().find("card") != std::string::npos) {
+        std::string node_info =
+            drmpp::info::DrmInfo::get_node_info(entry.path().c_str());
+        std::cout << node_info << std::endl;
+      }
     }
+    return false;
+  }
 
-    ~App() = default;
-
-    [[nodiscard]] bool run() const {
-        const std::string path = "/dev/dri";
-        for (const auto &entry: std::filesystem::directory_iterator(path)) {
-            if (entry.path().string().find("card") != std::string::npos) {
-                std::string node_info = drmpp::info::DrmInfo::get_node_info(entry.path().c_str());
-                std::cout << node_info << std::endl;
-            }
-        }
-        return false;
-    }
-
-private:
-    std::unique_ptr<Logging> logging_;
+ private:
+  std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char **argv) {
-    std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, handle_signal);
 
-    cxxopts::Options options("drm-json", "DRM info to JSON");
-    options.set_width(80)
-            .set_tab_expansion()
-            .allow_unrecognised_options()
-            .add_options()("help", "Print help");
+  cxxopts::Options options("drm-json", "DRM info to JSON");
+  options.set_width(80)
+      .set_tab_expansion()
+      .allow_unrecognised_options()
+      .add_options()("help", "Print help");
 
-    const auto result = options.parse(argc, argv);
+  const auto result = options.parse(argc, argv);
 
-    if (result.count("help")) {
-        spdlog::info("{}", options.help({"", "Group"}));
-        exit(EXIT_SUCCESS);
-    }
+  if (result.count("help")) {
+    spdlog::info("{}", options.help({"", "Group"}));
+    exit(EXIT_SUCCESS);
+  }
 
-    const App app({});
+  const App app({});
 
-    while (gRunning && app.run()) {
-    }
+  while (gRunning && app.run()) {
+  }
 
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

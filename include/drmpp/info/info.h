@@ -1,5 +1,5 @@
 /*
-* Copyright 2024 drmpp contributors
+ * Copyright 2024 drmpp contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,57 +18,85 @@
 #define INCLUDE_DRMPP_KMS_INFO_INFO_H_
 
 #include <xf86drmMode.h>
+
+#include <rapidjson/rapidjson.h>
+
 #include <rapidjson/document.h>
 
-
 namespace drmpp::info {
-    struct DrmInfo {
-        static std::string get_node_info(const char *path);
+struct DrmInfo {
+  static std::string get_node_info(const char* path);
 
-    private:
-        static unsigned long tainted_info();
+ private:
+  static unsigned long tainted_info();
 
-        [[nodiscard]] static rapidjson::Value kernel_info(rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value kernel_info(
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value device_info(int fd, rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value device_info(
+      int fd,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value driver_info(int fd, rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value driver_info(
+      int fd,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value in_formats_info(int fd, uint32_t blob_id,
-                                                              rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value in_formats_info(
+      int fd,
+      uint32_t blob_id,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value mode_info(const drmModeModeInfo *mode,
-                                          rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value mode_info(
+      const drmModeModeInfo* mode,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value mode_id_info(int fd, uint32_t blob_id,
-                                                           rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value mode_id_info(
+      int fd,
+      uint32_t blob_id,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value writeback_pixel_formats_info(int fd, uint32_t blob_id,
-                                                                           rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value writeback_pixel_formats_info(
+      int fd,
+      uint32_t blob_id,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value path_info(int fd, uint32_t blob_id);
+  static rapidjson::Value path_info(int fd, uint32_t blob_id);
 
-        [[nodiscard]] static rapidjson::Value hdr_output_metadata_info(int fd, uint32_t blob_id,
-                                                                       rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value hdr_output_metadata_info(
+      int fd,
+      uint32_t blob_id,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        [[nodiscard]] static rapidjson::Value fb_info(int fd, uint32_t id,
-                                                      rapidjson::MemoryPoolAllocator<> &allocator);
+  [[nodiscard]] static rapidjson::Value
+  fb_info(int fd, uint32_t id, rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value properties_info(int fd, uint32_t id, uint32_t type,
-                                                rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value properties_info(
+      int fd,
+      uint32_t id,
+      uint32_t type,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value connectors_info(int fd, const drmModeRes *res,
-                                                rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value connectors_info(
+      int fd,
+      const drmModeRes* res,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value encoders_info(int fd, const drmModeRes *res,
-                                              rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value encoders_info(
+      int fd,
+      const drmModeRes* res,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value crtcs_info(int fd, const drmModeRes *res, rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value crtcs_info(
+      int fd,
+      const drmModeRes* res,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static rapidjson::Value planes_info(int fd, rapidjson::MemoryPoolAllocator<> &allocator);
+  static rapidjson::Value planes_info(
+      int fd,
+      rapidjson::MemoryPoolAllocator<>& allocator);
 
-        static void node_info(const char *path, rapidjson::Document &d);
-    };
-}
+  static void node_info(const char* path, rapidjson::Document& d);
+};
+}  // namespace drmpp::info
 
-#endif // INCLUDE_DRMPP_KMS_INFO_INFO_H_
+#endif  // INCLUDE_DRMPP_KMS_INFO_INFO_H_
