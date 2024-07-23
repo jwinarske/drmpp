@@ -46,8 +46,8 @@ pkglibdir = join_paths(libdir, pkgname)
 cpp = meson.get_compiler('cpp')
 add_project_arguments(
     cpp.get_supported_arguments([
-#                                    '-Wno-unused-parameter',
-#                                    '-Wno-missing-field-initializers',
+                                    #                                    '-Wno-unused-parameter',
+                                    #                                    '-Wno-missing-field-initializers',
                                 ]),
     language : ['cpp'],
 )
@@ -81,7 +81,8 @@ opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW' })
 spdlog = cmake.subproject('spdlog', options : opt_var)
 spdlog_dep = spdlog.dependency('spdlog')
 
-rapidjson_dep = declare_dependency(include_directories : include_directories('../subprojects/rapidjson/include'))
+
+rapidjson_dep = declare_dependency(include_directories : include_directories('subprojects/rapidjson/include'))
 
 di_dep = dependency('libdisplay-info')
 drm_dep = dependency('libdrm', include_type : 'system')
