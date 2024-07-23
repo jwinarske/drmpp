@@ -3,7 +3,7 @@ DRM Client Library
 
 ## Pre-Requisites
 
-### 1. User must be added to the `input` group
+### 1. User must be added to the `input` group (if not root)
 
     sudo usermod -a -G input $USER
 
