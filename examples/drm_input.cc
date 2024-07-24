@@ -28,7 +28,8 @@
 
 #include "drmpp.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -51,9 +52,9 @@ void handle_signal(const int signal) {
 
 class App final : public drmpp::input::KeyboardObserver,
                   public drmpp::input::SeatObserver {
- public:
-  explicit App(const Configuration& /*config */)
-      : logging_(std::make_unique<Logging>()) {
+public:
+  explicit App(const Configuration & /*config */)
+    : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
@@ -62,7 +63,7 @@ class App final : public drmpp::input::KeyboardObserver,
 
   [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  void notify_seat_capabilities(drmpp::input::Seat* seat,
+  void notify_seat_capabilities(drmpp::input::Seat *seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps &= SEAT_CAPABILITIES_KEYBOARD) {
@@ -74,13 +75,13 @@ class App final : public drmpp::input::KeyboardObserver,
   }
 
   void notify_keyboard_xkb_v1_key(
-      drmpp::input::Keyboard* keyboard,
-      uint32_t time,
-      uint32_t xkb_scancode,
-      bool keymap_key_repeats,
-      const uint32_t state,
-      int xdg_key_symbol_count,
-      const xkb_keysym_t* xdg_key_symbols) override {
+    drmpp::input::Keyboard *keyboard,
+    uint32_t time,
+    uint32_t xkb_scancode,
+    bool keymap_key_repeats,
+    const uint32_t state,
+    int xdg_key_symbol_count,
+    const xkb_keysym_t *xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
@@ -97,7 +98,7 @@ class App final : public drmpp::input::KeyboardObserver,
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         const std::string path = "/dev/dri";
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        for (const auto &entry: std::filesystem::directory_iterator(path)) {
           if (entry.path().string().find("card") != std::string::npos) {
             std::string node_info =
                 drmpp::info::DrmInfo::get_node_info(entry.path().c_str());
@@ -108,7 +109,7 @@ class App final : public drmpp::input::KeyboardObserver,
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         if (drmpp::utils::is_cmd_present("udevadm")) {
           const std::string path = "/dev/input/by-path";
-          for (const auto& entry : std::filesystem::directory_iterator(path)) {
+          for (const auto &entry: std::filesystem::directory_iterator(path)) {
             auto device_name = read_symlink(entry).generic_string();
 
             std::string token = "../";
@@ -133,60 +134,80 @@ class App final : public drmpp::input::KeyboardObserver,
     } else if (xdg_key_symbols[0] == XKB_KEY_e) {
       std::scoped_lock<std::mutex> lock(cmd_mutex_);
       if (drmpp::utils::is_cmd_present("find")) {
-        std::string result;
-        if (!drmpp::utils::execute("find /sys/devices -iname edid", result)) {
-          LOG_ERROR("Failed to find edid");
+        const auto udev = udev_new();
+        if (!udev) {
+          LOG_ERROR("Can't create udev");
           return;
         }
-        auto condidates = drmpp::utils::split(result, "\n");
-        for (const auto& candidate : condidates) {
-          if (candidate.empty()) {
-            continue;
-          }
-          FILE* f = fopen(candidate.c_str(), "r");
-          if (!f) {
-            DLOG_DEBUG("Failed to load file: {}", candidate);
-            return;
-          }
 
-          static uint8_t raw[32 * 1024];
-          size_t size{};
-          while (!feof(f)) {
-            size += fread(&raw[size], 1, sizeof(raw) - size, f);
-            if (ferror(f)) {
-              LOG_ERROR("fread failed");
-              break;
-            }
-            if (size >= sizeof(raw)) {
-              fprintf(stderr, "input too large\n");
-              break;
-            }
-          }
-          fclose(f);
+        /*
+         * Dump EDID from enabled and connected nodes
+         */
+        const auto enumerate = udev_enumerate_new(udev);
+        udev_enumerate_add_match_subsystem(enumerate, "drm");
+        udev_enumerate_scan_devices(enumerate);
 
-          if (size) {
-            std::stringstream ss;
-            ss << drmpp::utils::Hexdump(raw, size);
-            LOG_INFO("[{}]\n{}", candidate, ss.str());
+        const auto devices = udev_enumerate_get_list_entry(enumerate);
+        udev_list_entry *dev_list_entry;
+        udev_list_entry_foreach(dev_list_entry, devices) {
+          const auto path = udev_list_entry_get_name(dev_list_entry);
+          const auto dev = udev_device_new_from_syspath(udev, path);
+
+          if (!udev_device_get_devnode(dev)) {
+            if (strcmp("enabled", udev_device_get_sysattr_value(dev, "enabled")) == 0 &&
+                strcmp("connected", udev_device_get_sysattr_value(dev, "status")) == 0) {
+              std::string edid_path = path + std::string("/edid");
+              FILE *f = fopen(edid_path.c_str(), "r");
+              if (!f) {
+                DLOG_DEBUG("Failed to load file: {}", edid_path);
+                return;
+              }
+
+              // Read EDID
+              static uint8_t raw[32 * 1024];
+              size_t size{};
+              while (!feof(f)) {
+                size += fread(&raw[size], 1, sizeof(raw) - size, f);
+                if (ferror(f)) {
+                  LOG_ERROR("fread failed");
+                  break;
+                }
+                if (size >= sizeof(raw)) {
+                  fprintf(stderr, "input too large\n");
+                  break;
+                }
+              }
+              fclose(f);
+
+              // Dump EDID
+              if (size) {
+                std::stringstream ss;
+                ss << drmpp::utils::Hexdump(raw, size);
+                LOG_INFO("[{}]\n{}", path, ss.str());
+              }
+            }
           }
+          udev_device_unref(dev);
         }
+        udev_enumerate_unref(enumerate);
+        udev_unref(udev);
       }
     }
     LOG_INFO(
-        "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-        "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-        time, xkb_scancode, keymap_key_repeats,
-        state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-        xdg_key_symbol_count, xdg_key_symbols[0]);
+      "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+      "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+      time, xkb_scancode, keymap_key_repeats,
+      state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+      xdg_key_symbol_count, xdg_key_symbols[0]);
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-input", "Input information");
