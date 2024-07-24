@@ -1,6 +1,9 @@
 # CHANGELOG
 
-Jul 23, 2024
+Jul 24, 2024
+1. Read EDID from `connected` and `enabled` outputs
+
+2. Jul 23, 2024
 1. change subprojects to git submodules
 2. initial readthedocs support
 
