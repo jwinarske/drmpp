@@ -11,7 +11,7 @@ cxxopts = cmake.subproject('cxxopts', options : opt_var)
 cxxopts_dep = cxxopts.dependency('cxxopts')
 
 
-executable('drm-json', ['drm_json.cc'],
+executable('drm-caps', ['drm_caps.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
