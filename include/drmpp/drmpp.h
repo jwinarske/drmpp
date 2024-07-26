@@ -28,6 +28,14 @@
 #include "config.h"
 #include "logging/logging.h"
 
+extern "C" {
+#include <libliftoff.h>
+}
+
 #include "input/seat.h"
+#include "input/keyboard.h"
+#include "input/pointer.h"
+#include "input/touch.h"
+#include "plane/plane.h"
 
 #endif  // INCLUDE_DRMPP_H_

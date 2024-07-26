@@ -1,12 +1,12 @@
 #include <cassert>
 #include <drm_fourcc.h>
-#include <sys/mman.h>
 #include <xf86drm.h>
+#include <sys/mman.h>
 
 #include "plane/plane.h"
 
 namespace drmpp::plane {
-	drmModeConnector *pick_connector(const int drm_fd, const drmModeRes *drm_res) {
+	drmModeConnector *Common::pick_connector(const int drm_fd, const drmModeRes *drm_res) {
 		for (auto i = 0; i < drm_res->count_connectors; i++) {
 			const auto connector = drmModeGetConnector(drm_fd, drm_res->connectors[i]);
 			if (connector->connection == DRM_MODE_CONNECTED) {
@@ -18,7 +18,7 @@ namespace drmpp::plane {
 		return nullptr;
 	}
 
-	drmModeCrtc *pick_crtc(const int drm_fd, const drmModeRes *drm_res, const drmModeConnector *connector) {
+	drmModeCrtc *Common::pick_crtc(const int drm_fd, const drmModeRes *drm_res, const drmModeConnector *connector) {
 		uint32_t crtc_id{};
 
 		auto enc = drmModeGetEncoder(drm_fd, connector->encoder_id);
@@ -56,7 +56,7 @@ namespace drmpp::plane {
 		return nullptr;
 	}
 
-	void disable_all_crtcs_except(const int drm_fd, const drmModeRes *drm_res, const uint32_t crtc_id) {
+	void Common::disable_all_crtcs_except(const int drm_fd, const drmModeRes *drm_res, const uint32_t crtc_id) {
 		for (int i = 0; i < drm_res->count_crtcs; i++) {
 			if (drm_res->crtcs[i] == crtc_id) {
 				continue;
@@ -66,8 +66,8 @@ namespace drmpp::plane {
 		}
 	}
 
-	bool dumb_fb_init(dumb_fb *fb, const int drm_fd, const uint32_t format, const uint32_t width,
-	                  const uint32_t height) {
+	bool Common::dumb_fb_init(dumb_fb *fb, const int drm_fd, const uint32_t format, const uint32_t width,
+	                          const uint32_t height) {
 		assert(format == DRM_FORMAT_ARGB8888 || format == DRM_FORMAT_XRGB8888);
 
 		drm_mode_create_dumb create = {
@@ -103,7 +103,7 @@ namespace drmpp::plane {
 		return true;
 	}
 
-	void *dumb_fb_map(const dumb_fb *fb, const int drm_fd) {
+	void *Common::dumb_fb_map(dumb_fb const *fb, const int drm_fd) {
 		drm_mode_map_dumb map = {.handle = fb->handle};
 		if (drmIoctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &map) < 0) {
 			return MAP_FAILED;
@@ -113,8 +113,8 @@ namespace drmpp::plane {
 		            static_cast<off_t>(map.offset));
 	}
 
-	void dumb_fb_fill(dumb_fb *fb, const int drm_fd, const uint32_t color) {
-		const auto data = static_cast<unsigned int *>(dumb_fb_map(fb, drm_fd));
+	void Common::dumb_fb_fill(Common::dumb_fb const *fb, const int drm_fd, const uint32_t color) {
+		const auto data = static_cast<unsigned int *>(Common::dumb_fb_map(fb, drm_fd));
 		if (data == MAP_FAILED) {
 			return;
 		}

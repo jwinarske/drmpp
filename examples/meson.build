@@ -28,3 +28,21 @@ executable('drm-input', ['drm_input.cc'],
            ],
            install : true,
 )
+
+executable('drm-simple', ['drm_simple.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : true,
+)
+
+executable('drm-compostior', ['drm_compositor.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : true,
+)
