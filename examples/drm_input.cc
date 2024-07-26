@@ -21,6 +21,10 @@
 
 #include <libinput.h>
 
+extern "C" {
+#include <libdisplay-info/info.h>
+}
+
 #include <info/info.h>
 #include <input/keyboard.h>
 #include <utils.h>
@@ -62,6 +66,56 @@ public:
   ~App() override { seat_.reset(); }
 
   [[nodiscard]] bool run() const { return seat_->run_once(); }
+
+  static void print_info(const di_info *info) {
+    auto str = di_info_get_make(info);
+    LOG_INFO("make: [{}]", str ? str : "");
+    free(str);
+
+    str = di_info_get_model(info);
+    LOG_INFO("model: [{}]", str ? str : "");
+    free(str);
+
+    str = di_info_get_serial(info);
+    LOG_INFO("serial: [{}]", str ? str : "");
+    free(str);
+
+    const auto hdr_static = di_info_get_hdr_static_metadata(info);
+    assert(hdr_static);
+    LOG_INFO("HDR static metadata");
+    LOG_INFO("\tluminance {:f}-{:f}, maxFALL {:f}",
+             hdr_static->desired_content_min_luminance,
+             hdr_static->desired_content_max_luminance,
+             hdr_static->desired_content_max_frame_avg_luminance);
+    LOG_INFO("\tmetadata type1: {}", hdr_static->type1 ? "yes" : "no");
+    LOG_INFO("\tEOTF tSDR: {}, tHDR: {}, PQ: {}, HLG: {}",
+             hdr_static->traditional_sdr ? "yes" : "no",
+             hdr_static->traditional_hdr ? "yes" : "no",
+             hdr_static->pq ? "yes" : "no",
+             hdr_static->hlg ? "yes" : "no");
+
+    const auto primaries = di_info_get_default_color_primaries(info);
+    assert(primaries);
+    LOG_INFO("default color primaries");
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "    red", primaries->primary[0].x, primaries->primary[0].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "  green", primaries->primary[1].x, primaries->primary[1].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "   blue", primaries->primary[2].x, primaries->primary[2].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "default white", primaries->default_white.x, primaries->default_white.y);
+    LOG_INFO("default gamma: {:.2f}", di_info_get_default_gamma(info));
+
+    const auto ssc = di_info_get_supported_signal_colorimetry(info);
+    assert(ssc);
+    if (ssc->bt2020_cycc)
+      LOG_INFO("signal colorimetry: BT2020_cYCC");
+    if (ssc->bt2020_ycc)
+      LOG_INFO("signal colorimetry: BT2020_YCC");
+    if (ssc->bt2020_rgb)
+      LOG_INFO("signal colorimetry: BT2020_RGB");
+    if (ssc->st2113_rgb)
+      LOG_INFO("signal colorimetry: P3D65+P3DCI");
+    if (ssc->ictcp)
+      LOG_INFO("signal colorimetry: ICtCp");
+  }
 
   void notify_seat_capabilities(drmpp::input::Seat *seat,
                                 uint32_t caps) override {
@@ -173,7 +227,7 @@ public:
                   break;
                 }
                 if (size >= sizeof(raw)) {
-                  fprintf(stderr, "input too large\n");
+                  LOG_ERROR("Input too large");
                   break;
                 }
               }
@@ -181,9 +235,16 @@ public:
 
               // Dump EDID
               if (size) {
-                std::stringstream ss;
-                ss << drmpp::utils::Hexdump(raw, size);
-                LOG_INFO("[{}]\n{}", path, ss.str());
+                auto info = di_info_parse_edid(raw, size);
+                if (!info) {
+                  LOG_ERROR("di_edid_parse failed");
+                  break;
+                }
+
+                LOG_INFO("= EDID ===================");
+                print_info(info);
+                LOG_INFO("==========================");
+                di_info_destroy(info);
               }
             }
           }
@@ -216,9 +277,7 @@ int main(const int argc, char **argv) {
       .allow_unrecognised_options()
       .add_options()("help", "Print help");
 
-  const auto result = options.parse(argc, argv);
-
-  if (result.count("help")) {
+  if (options.parse(argc, argv).count("help")) {
     spdlog::info("{}", options.help({"", "Group"}));
     exit(EXIT_SUCCESS);
   }

@@ -10,12 +10,12 @@ opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0159' : 'NEW' })
 cxxopts = cmake.subproject('cxxopts', options : opt_var)
 cxxopts_dep = cxxopts.dependency('cxxopts')
 
+
 executable('drm-json', ['drm_json.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
                drmp_dep,
-               rapidjson_dep,
            ],
            install : true,
 )
@@ -25,7 +25,6 @@ executable('drm-input', ['drm_input.cc'],
            dependencies : [
                cxxopts_dep,
                drmp_dep,
-               rapidjson_dep,
            ],
            install : true,
 )

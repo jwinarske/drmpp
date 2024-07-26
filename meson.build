@@ -67,33 +67,6 @@ config_h = configure_file(
 config_inc = include_directories('.')
 
 #########################
-# Dependencies
-#########################
-
-cmake = import('cmake')
-
-opt_var = cmake.subproject_options()
-opt_var.add_cmake_defines({ 'CMAKE_VERBOSE_MAKEFILE' : true })
-opt_var.add_cmake_defines({ 'SPDLOG_NO_EXCEPTIONS' : true })
-opt_var.add_cmake_defines({ 'SPDLOG_NO_THREAD_ID' : true })
-opt_var.add_cmake_defines({ 'SPDLOG_BUILD_PIC' : true })
-opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW' })
-spdlog = cmake.subproject('spdlog', options : opt_var)
-spdlog_dep = spdlog.dependency('spdlog')
-
-
-rapidjson_dep = declare_dependency(include_directories : include_directories('subprojects/rapidjson/include'))
-
-di_dep = dependency('libdisplay-info')
-drm_dep = dependency('libdrm', include_type : 'system')
-input_dep = dependency('libinput', include_type : 'system')
-liftoff_dep = dependency('libliftoff')
-udev_dep = dependency('libudev', include_type : 'system')
-xkbcommon_dep = dependency('xkbcommon', include_type : 'system')
-
-runtime = cpp.find_library('rt', required : false)
-
-#########################
 # Source
 #########################
 

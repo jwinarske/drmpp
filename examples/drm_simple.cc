@@ -19,10 +19,11 @@
 #include <iostream>
 
 #include <cxxopts.hpp>
+#include <libliftoff.h>
+
+#include "plane/plane.h"
 
 #include "drmpp.h"
-
-#include "info/info.h"
 
 struct Configuration {
 };
@@ -58,9 +59,6 @@ public:
     const std::string path = "/dev/dri";
     for (const auto &entry: std::filesystem::directory_iterator(path)) {
       if (entry.path().string().find("card") != std::string::npos) {
-        std::string node_info =
-            drmpp::info::DrmInfo::get_node_info(entry.path().c_str());
-        std::cout << node_info << std::endl;
       }
     }
     return false;
@@ -68,12 +66,61 @@ public:
 
 private:
   std::unique_ptr<Logging> logging_;
+
+  static constexpr uint32_t kLayersLen = UINT32_C(4);
+
+  /* ARGB 8:8:8:8 */
+  static constexpr uint32_t kColors[] = {
+    0xFFFF0000, /* red */
+    0xFF00FF00, /* green */
+    0xFF0000FF, /* blue */
+    0xFFFFFF00, /* yellow */
+  };
+
+  static liftoff_layer *add_layer(const int drm_fd, liftoff_output *output, const int x, const int y,
+                                  const uint32_t width, const uint32_t height, const bool with_alpha) {
+    static bool first = true;
+    static size_t color_idx = 0;
+    drmpp::plane::dumb_fb fb{};
+    uint32_t color;
+    liftoff_layer *layer{};
+
+    if (!drmpp::plane::dumb_fb_init(&fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888, width,
+                                    height)) {
+      LOG_ERROR("failed to create framebuffer");
+      return nullptr;
+    }
+    LOG_INFO("Created FB {} with size {}x{}", fb.id, width, height);
+
+    if (first) {
+      color = 0xFFFFFFFF;
+      first = false;
+    } else {
+      color = kColors[color_idx];
+      color_idx = (color_idx + 1) % std::size(kColors);
+    }
+
+    dumb_fb_fill(&fb, drm_fd, color);
+
+    layer = liftoff_layer_create(output);
+    liftoff_layer_set_property(layer, "FB_ID", fb.id);
+    liftoff_layer_set_property(layer, "CRTC_X", static_cast<uint64_t>(x));
+    liftoff_layer_set_property(layer, "CRTC_Y", static_cast<uint64_t>(y));
+    liftoff_layer_set_property(layer, "CRTC_W", width);
+    liftoff_layer_set_property(layer, "CRTC_H", height);
+    liftoff_layer_set_property(layer, "SRC_X", 0);
+    liftoff_layer_set_property(layer, "SRC_Y", 0);
+    liftoff_layer_set_property(layer, "SRC_W", width << 16);
+    liftoff_layer_set_property(layer, "SRC_H", height << 16);
+
+    return layer;
+  }
 };
 
 int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
-  cxxopts::Options options("drm-json", "DRM info to JSON");
+  cxxopts::Options options("drm-simple", "Simple DRM example");
   options.set_width(80)
       .set_tab_expansion()
       .allow_unrecognised_options()
