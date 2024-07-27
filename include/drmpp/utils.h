@@ -19,7 +19,7 @@ namespace drmpp::utils {
    * @relation
    * flutter
    */
-  static std::string &rtrim(std::string &s, const char *t) {
+  inline std::string &rtrim(std::string &s, const char *t) {
     s.erase(s.find_last_not_of(t) + 1);
     return s;
   }
@@ -31,7 +31,7 @@ namespace drmpp::utils {
    * @relation
    * flutter
    */
-  static std::string &ltrim(std::string &s, const char *t) {
+  inline std::string &ltrim(std::string &s, const char *t) {
     s.erase(0, s.find_first_not_of(t));
     return s;
   }
@@ -43,7 +43,7 @@ namespace drmpp::utils {
    * @relation
    * flutter
    */
-  [[maybe_unused]] static std::string &trim(std::string &s, const char *t) {
+  [[maybe_unused]] inline std::string &trim(std::string &s, const char *t) {
     return ltrim(rtrim(s, t), t);
   }
 
@@ -53,7 +53,7 @@ namespace drmpp::utils {
    * @relation
    * internal
    */
-  [[maybe_unused]] static std::vector<std::string> split(
+  [[maybe_unused]] inline std::vector<std::string> split(
     std::string str,
     const std::string &token) {
     std::vector<std::string> result;
@@ -72,7 +72,7 @@ namespace drmpp::utils {
     return result;
   }
 
-  static bool execute(const char *cmd, std::string &result) {
+  inline bool execute(const char *cmd, std::string &result) {
     DLOG_TRACE("execute: cmd: {}", cmd);
     const auto fp = popen(cmd, "r");
     if (!fp) {
@@ -95,7 +95,7 @@ namespace drmpp::utils {
     return true;
   }
 
-  static bool is_cmd_present(const char *cmd) {
+  inline bool is_cmd_present(const char *cmd) {
     const std::string check_cmd = "which " + std::string(cmd);
     std::string result;
     if (execute(check_cmd.c_str(), result)) {
@@ -107,20 +107,77 @@ namespace drmpp::utils {
     return false;
   }
 
-  class IosFlagSaver {
-  public:
-    explicit IosFlagSaver(std::ostream &_ios) : ios(_ios), f(_ios.flags()) {
+  inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
+    std::vector<std::string> result;
+
+    const auto udev = udev_new();
+    if (!udev) {
+      LOG_ERROR("Can't create udev");
+      return {};
     }
 
-    ~IosFlagSaver() { ios.flags(f); }
+    const auto enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "drm");
+    udev_enumerate_scan_devices(enumerate);
 
-    IosFlagSaver(const IosFlagSaver &rhs) = delete;
+    const auto devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry *dev_list_entry;
+    udev_list_entry_foreach(dev_list_entry, devices) {
+      const auto path = udev_list_entry_get_name(dev_list_entry);
+      const auto dev = udev_device_new_from_syspath(udev, path);
+      if (!udev_device_get_devnode(dev)) {
+        if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") == 0) {
+          const auto parent = udev_device_get_parent(dev);
+          auto parent_node = udev_device_get_devnode(parent);
+          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected") == 0) {
+            result.emplace_back(parent_node);
+          } else {
+            result.emplace_back(parent_node);
+          }
+        }
+      }
+      udev_device_unref(dev);
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
 
-    IosFlagSaver &operator=(const IosFlagSaver &rhs) = delete;
+    return result;
+  }
 
-  private:
-    std::ostream &ios;
-    std::ios::fmtflags f;
-  };
+  inline std::vector<std::string> get_enabled_drm_output_nodes(const bool connected) {
+    std::vector<std::string> result;
+
+    const auto udev = udev_new();
+    if (!udev) {
+      LOG_ERROR("Can't create udev");
+      return {};
+    }
+
+    const auto enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "drm");
+    udev_enumerate_scan_devices(enumerate);
+
+    const auto devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry *dev_list_entry;
+    udev_list_entry_foreach(dev_list_entry, devices) {
+      const auto path = udev_list_entry_get_name(dev_list_entry);
+      const auto dev = udev_device_new_from_syspath(udev, path);
+
+      if (!udev_device_get_devnode(dev)) {
+        if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") == 0) {
+          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected") == 0) {
+            result.emplace_back(path);
+          } else {
+            result.emplace_back(path);
+          }
+        }
+      }
+      udev_device_unref(dev);
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
+
+    return result;
+  }
 } // namespace drmpp::utils
 #endif  // INCLUDE_DRMPP_UTILS_H_

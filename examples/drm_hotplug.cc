@@ -22,6 +22,8 @@
 
 #include "drmpp.h"
 
+#include "info/info.h"
+
 struct Configuration {
 };
 
@@ -53,12 +55,55 @@ public:
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
-    for (const auto &node: nodes) {
-      std::string node_info =
-          drmpp::info::DrmInfo::get_node_info(node.c_str());
-      std::cout << node_info << std::endl;
+    const auto udev = udev_new();
+
+    auto mon = udev_monitor_new_from_netlink(udev, "udev");
+    udev_monitor_filter_add_match_subsystem_devtype(mon, "drm", nullptr);
+    udev_monitor_enable_receiving(mon);
+    auto fd = udev_monitor_get_fd(mon);
+
+    while (gRunning) {
+      fd_set fds;
+      timeval tv{};
+      int ret;
+
+      FD_ZERO(&fds);
+      FD_SET(fd, &fds);
+
+      tv = {
+        .tv_sec = 0,
+        .tv_usec = 0,
+      };
+
+      // non-blocking
+      ret = select(fd + 1, &fds, nullptr, nullptr, &tv);
+      if (ret > 0 && FD_ISSET(fd, &fds)) {
+        auto dev = udev_monitor_receive_device(mon);
+        if (dev) {
+          auto node = udev_device_get_devnode(dev);
+          auto subsystem = udev_device_get_subsystem(dev);
+          auto devtype = udev_device_get_devtype(dev);
+          auto action = udev_device_get_action(dev);
+          LOG_INFO("Got Device");
+          LOG_INFO("   Node: {}", node ? node : "");
+          LOG_INFO("   Subsystem: {}", subsystem ? subsystem : "");
+          LOG_INFO("   Devtype: {}", devtype ? devtype : "");
+          LOG_INFO("   Action: {}", action ? action : "");
+          udev_device_unref(dev);
+
+          auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
+          LOG_INFO("Enabled and Connected:");
+          for (const auto &n: nodes) {
+            LOG_INFO("\t{}", n);
+          }
+        } else {
+          LOG_INFO("No Device from receive_device(). An error occured.");
+        }
+      }
+      usleep(250 * 1000);
+      fflush(stdout);
     }
+
     return false;
   }
 
@@ -69,7 +114,7 @@ private:
 int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
-  cxxopts::Options options("drm-json", "DRM info to JSON");
+  cxxopts::Options options("drm-hotplug", "monitor drm hotplug events");
   options.set_width(80)
       .set_tab_expansion()
       .allow_unrecognised_options()
@@ -87,3 +132,5 @@ int main(const int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
+
+

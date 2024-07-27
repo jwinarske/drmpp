@@ -46,3 +46,12 @@ executable('drm-compostior', ['drm_compositor.cc'],
            ],
            install : true,
 )
+
+executable('drm-hotplug', ['drm_hotplug.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : true,
+)

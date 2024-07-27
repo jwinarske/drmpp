@@ -26,16 +26,19 @@
 #include <cstring>
 
 #include "config.h"
-#include "logging/logging.h"
 
 extern "C" {
 #include <libliftoff.h>
 }
 
-#include "input/seat.h"
+#include "info/info.h"
 #include "input/keyboard.h"
 #include "input/pointer.h"
+#include "input/seat.h"
 #include "input/touch.h"
+#include "logging/logging.h"
 #include "plane/plane.h"
+#include "utils.h"
+
 
 #endif  // INCLUDE_DRMPP_H_
