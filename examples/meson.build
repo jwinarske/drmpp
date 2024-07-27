@@ -38,7 +38,7 @@ executable('drm-simple', ['drm_simple.cc'],
            install : true,
 )
 
-executable('drm-compostior', ['drm_compositor.cc'],
+executable('drm-compositor', ['drm_compositor.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,

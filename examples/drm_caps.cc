@@ -53,7 +53,7 @@ public:
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
+    const auto nodes = drmpp::utils::get_enabled_drm_nodes(false);
     for (const auto &node: nodes) {
       std::string node_info =
           drmpp::info::DrmInfo::get_node_info(node.c_str());

@@ -295,7 +295,7 @@ int main(const int argc, char **argv) {
     exit(EXIT_SUCCESS);
   }
 
-  App app({});
+  const App app({});
 
   while (gRunning && app.run()) {
   }

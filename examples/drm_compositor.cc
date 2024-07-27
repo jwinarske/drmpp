@@ -54,114 +54,111 @@ public:
 	~App() = default;
 
 	[[nodiscard]] static bool run() {
-		const std::string path = "/dev/dri";
-		for (const auto &entry: std::filesystem::directory_iterator(path)) {
-			if (entry.path().string().find("card") != std::string::npos) {
-				const auto drm_fd = open(entry.path().c_str(), O_RDWR | O_CLOEXEC);
-				if (drm_fd < 0) {
-					LOG_ERROR("Failed to open {}", entry.path().c_str());
-					return false;
-				}
-
-				if (drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
-					LOG_ERROR("drmSetClientCap(ATOMIC)");
-					return false;
-				}
-
-				const auto device = liftoff_device_create(drm_fd);
-				if (device == nullptr) {
-					LOG_ERROR("liftoff_device_create");
-					return false;
-				}
-
-				liftoff_device_register_all_planes(device);
-
-				const auto drm_res = drmModeGetResources(drm_fd);
-
-				const auto connector = drmpp::plane::Common::pick_connector(drm_fd, drm_res);
-				if (connector == nullptr) {
-					LOG_ERROR("no connector found");
-					return false;
-				}
-
-				const auto crtc = drmpp::plane::Common::pick_crtc(drm_fd, drm_res, connector);
-				if (crtc == nullptr || !crtc->mode_valid) {
-					LOG_ERROR("no CRTC found");
-					return false;
-				}
-
-				drmpp::plane::Common::disable_all_crtcs_except(drm_fd, drm_res, crtc->crtc_id);
-
-				const auto output = liftoff_output_create(device, crtc->crtc_id);
-
-				drmModeFreeResources(drm_res);
-
-
-				LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
-				         crtc->crtc_id);
-
-				drmpp::plane::Common::dumb_fb composition_fb{};
-				const auto composition_layer = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
-				                                         crtc->mode.vdisplay, false, true,
-				                                         &composition_fb);
-				liftoff_layer *layers[kLayersLen];
-				drmpp::plane::Common::dumb_fb fbs[kLayersLen]{};
-				layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
-				                      crtc->mode.vdisplay, false, true, &fbs[0]);
-				for (auto i = 1; i < kLayersLen; i++) {
-					layers[i] = add_layer(drm_fd, output, 100 * (int) i, 100 * (int) i,
-					                      256, 256, i % 2, false, &fbs[i]);
-				}
-
-				liftoff_layer_set_property(composition_layer, "zpos", 0);
-				for (auto i = 0; i < kLayersLen; i++) {
-					liftoff_layer_set_property(layers[i], "zpos", i);
-				}
-
-				liftoff_output_set_composition_layer(output, composition_layer);
-
-				constexpr uint32_t flags = DRM_MODE_ATOMIC_NONBLOCK;
-				const auto req = drmModeAtomicAlloc();
-				auto ret = liftoff_output_apply(output, req, flags, nullptr);
-				if (ret != 0) {
-					LOG_ERROR("liftoff_output_apply");
-					return false;
-				}
-
-				// Composite layers that didn't make it into a plane
-				for (auto i = 1; i < kLayersLen; i++) {
-					if (liftoff_layer_needs_composition(layers[i])) {
-						composite(drm_fd, &composition_fb, &fbs[i],
-						          (int) i * 100, (int) i * 100);
-					}
-				}
-
-				ret = drmModeAtomicCommit(drm_fd, req, flags, nullptr);
-				if (ret < 0) {
-					LOG_ERROR("drmModeAtomicCommit");
-					return false;
-				}
-
-				auto plane = liftoff_layer_get_plane(composition_layer);
-				printf("Composition layer got assigned to plane %u\n",
-				       plane ? liftoff_plane_get_id(plane) : 0);
-				for (int i = 0; i < kLayersLen; i++) {
-					plane = liftoff_layer_get_plane(layers[i]);
-					LOG_INFO("Layer {} got assigned to plane {}", i, plane ? liftoff_plane_get_id(plane) : 0);
-				}
-
-				sleep(1);
-
-				drmModeAtomicFree(req);
-				liftoff_layer_destroy(composition_layer);
-				for (auto &layer: layers) {
-					liftoff_layer_destroy(layer);
-				}
-				liftoff_output_destroy(output);
-				drmModeFreeCrtc(crtc);
-				drmModeFreeConnector(connector);
-				liftoff_device_destroy(device);
+		for (const auto &node: drmpp::utils::get_enabled_drm_nodes(true)) {
+			const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
+			if (drm_fd < 0) {
+				LOG_ERROR("Failed to open {}", node.c_str());
+				return false;
 			}
+
+			if (drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+				LOG_ERROR("drmSetClientCap(ATOMIC)");
+				return false;
+			}
+
+			const auto device = liftoff_device_create(drm_fd);
+			if (device == nullptr) {
+				LOG_ERROR("liftoff_device_create");
+				return false;
+			}
+
+			liftoff_device_register_all_planes(device);
+
+			const auto drm_res = drmModeGetResources(drm_fd);
+
+			const auto connector = drmpp::plane::Common::pick_connector(drm_fd, drm_res);
+			if (connector == nullptr) {
+				LOG_ERROR("no connector found");
+				return false;
+			}
+
+			const auto crtc = drmpp::plane::Common::pick_crtc(drm_fd, drm_res, connector);
+			if (crtc == nullptr || !crtc->mode_valid) {
+				LOG_ERROR("no CRTC found");
+				return false;
+			}
+
+			drmpp::plane::Common::disable_all_crtcs_except(drm_fd, drm_res, crtc->crtc_id);
+
+			const auto output = liftoff_output_create(device, crtc->crtc_id);
+
+			drmModeFreeResources(drm_res);
+
+
+			LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
+			         crtc->crtc_id);
+
+			drmpp::plane::Common::dumb_fb composition_fb{};
+			const auto composition_layer = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
+			                                         crtc->mode.vdisplay, false, true,
+			                                         &composition_fb);
+			liftoff_layer *layers[kLayersLen];
+			drmpp::plane::Common::dumb_fb fbs[kLayersLen]{};
+			layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
+			                      crtc->mode.vdisplay, false, true, &fbs[0]);
+			for (auto i = 1; i < kLayersLen; i++) {
+				layers[i] = add_layer(drm_fd, output, 100 * (int) i, 100 * (int) i,
+				                      256, 256, i % 2, false, &fbs[i]);
+			}
+
+			liftoff_layer_set_property(composition_layer, "zpos", 0);
+			for (auto i = 0; i < kLayersLen; i++) {
+				liftoff_layer_set_property(layers[i], "zpos", i);
+			}
+
+			liftoff_output_set_composition_layer(output, composition_layer);
+
+			constexpr uint32_t flags = DRM_MODE_ATOMIC_NONBLOCK;
+			const auto req = drmModeAtomicAlloc();
+			auto ret = liftoff_output_apply(output, req, flags, nullptr);
+			if (ret != 0) {
+				LOG_ERROR("liftoff_output_apply");
+				return false;
+			}
+
+			// Composite layers that didn't make it into a plane
+			for (auto i = 1; i < kLayersLen; i++) {
+				if (liftoff_layer_needs_composition(layers[i])) {
+					composite(drm_fd, &composition_fb, &fbs[i],
+					          (int) i * 100, (int) i * 100);
+				}
+			}
+
+			ret = drmModeAtomicCommit(drm_fd, req, flags, nullptr);
+			if (ret < 0) {
+				LOG_ERROR("drmModeAtomicCommit");
+				return false;
+			}
+
+			auto plane = liftoff_layer_get_plane(composition_layer);
+			printf("Composition layer got assigned to plane %u\n",
+			       plane ? liftoff_plane_get_id(plane) : 0);
+			for (int i = 0; i < kLayersLen; i++) {
+				plane = liftoff_layer_get_plane(layers[i]);
+				LOG_INFO("Layer {} got assigned to plane {}", i, plane ? liftoff_plane_get_id(plane) : 0);
+			}
+
+			sleep(1);
+
+			drmModeAtomicFree(req);
+			liftoff_layer_destroy(composition_layer);
+			for (auto &layer: layers) {
+				liftoff_layer_destroy(layer);
+			}
+			liftoff_output_destroy(output);
+			drmModeFreeCrtc(crtc);
+			drmModeFreeConnector(connector);
+			liftoff_device_destroy(device);
 		}
 		return false;
 	}
