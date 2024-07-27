@@ -11,102 +11,106 @@
 #include <csignal>
 
 namespace drmpp::input {
-class Keyboard;
+  class Keyboard;
 
-class KeyboardObserver {
- public:
-  enum KeyState {
-    KEY_STATE_RELEASE,
-    KEY_STATE_PRESS,
-  };
+  class KeyboardObserver {
+  public:
+    enum KeyState {
+      KEY_STATE_RELEASE,
+      KEY_STATE_PRESS,
+    };
 
-  virtual ~KeyboardObserver() = default;
+    virtual ~KeyboardObserver() = default;
 
-  virtual void notify_keyboard_xkb_v1_key(
-      Keyboard* keyboard,
+    virtual void notify_keyboard_xkb_v1_key(
+      Keyboard *keyboard,
       uint32_t time,
       uint32_t xkb_scancode,
       bool keymap_key_repeats,
       uint32_t state,
       int xdg_key_symbol_count,
-      const xkb_keysym_t* xdg_key_symbols) = 0;
-};
-
-class Keyboard {
- public:
-  struct event_mask {
-    bool enabled;
-    bool all;
+      const xkb_keysym_t *xdg_key_symbols) = 0;
   };
 
-  explicit Keyboard(event_mask const& event_mask,
-                    const char* xkbmodel,
-                    const char* xkblayout,
-                    const char* xkbvariant,
-                    const char* xkboptions,
-                    int32_t delay = 500,
-                    int32_t repeat = 33);
+  class Keyboard {
+  public:
+    struct event_mask {
+      bool enabled;
+      bool all;
+    };
 
-  ~Keyboard();
+    explicit Keyboard(event_mask const &event_mask,
+                      const char *xkbmodel,
+                      const char *xkblayout,
+                      const char *xkbvariant,
+                      const char *xkboptions,
+                      int32_t delay = 500,
+                      int32_t repeat = 33);
 
-  void register_observer(KeyboardObserver* observer, void* user_data = nullptr);
+    ~Keyboard();
 
-  void unregister_observer(KeyboardObserver* observer);
+    void register_observer(KeyboardObserver *observer, void *user_data = nullptr);
 
-  void set_user_data(void* user_data) { user_data_ = user_data; }
+    void unregister_observer(KeyboardObserver *observer);
 
-  [[nodiscard]] void* get_user_data() const { return user_data_; }
+    void set_user_data(void *user_data) { user_data_ = user_data; }
 
-  void handle_keyboard_event(libinput_event_keyboard* key_event);
+    [[nodiscard]] void *get_user_data() const { return user_data_; }
 
-  void set_event_mask(event_mask const& event_mask);
+    void handle_keyboard_event(libinput_event_keyboard *key_event);
 
-  // Disallow copy and assign.
-  Keyboard(const Keyboard&) = delete;
+    void set_event_mask(event_mask const &event_mask);
 
-  Keyboard& operator=(const Keyboard&) = delete;
+    // Disallow copy and assign.
+    Keyboard(const Keyboard &) = delete;
 
- private:
-  std::list<KeyboardObserver*> observers_{};
-  std::mutex observers_mutex_;
-  void* user_data_{};
-  event_mask event_mask_{};
+    Keyboard &operator=(const Keyboard &) = delete;
 
-  xkb_context* xkb_context_{};
-  xkb_keymap* xkb_keymap_{};
-  xkb_state* xkb_state_{};
+  private:
+    std::list<KeyboardObserver *> observers_{};
+    std::mutex observers_mutex_;
+    void *user_data_{};
+    event_mask event_mask_{};
 
-  struct {
-    int32_t rate;
-    int32_t delay;
-    timer_t timer;
-    uint32_t code;
-    sigevent sev;
-    struct sigaction sa;
+    xkb_context *xkb_context_{};
+    xkb_keymap *xkb_keymap_{};
+    xkb_state *xkb_state_{};
 
     struct {
-      uint32_t serial;
-      uint32_t time;
-      uint32_t xkb_scancode;
-      int key_repeats;
-      int xdg_keysym_count;
-      const xkb_keysym_t* key_syms;
-    } notify;
-  } repeat_{};
+      int32_t rate;
+      int32_t delay;
+      timer_t timer;
+      uint32_t code;
+      sigevent sev;
+      struct sigaction sa;
 
-  void load_keymap_from_file(const char* keymap_file = nullptr);
+      struct {
+        uint32_t serial;
+        uint32_t time;
+        uint32_t xkb_scancode;
+        int key_repeats;
+        int xdg_keysym_count;
+        const xkb_keysym_t *key_syms;
+      } notify;
+    } repeat_{};
 
-  static void xkb_log(xkb_context* context,
-                      xkb_log_level level,
-                      const char* format,
-                      va_list args);
+    void load_default_keymap();
 
-  void handle_repeat_info(int32_t delay, int32_t rate);
+    void load_keymap_from_file(const char *keymap_file = nullptr);
 
-  static void repeat_xkb_v1_key_callback(int sig, siginfo_t* si, void* uc);
+    static void xkb_log(xkb_context *context,
+                        xkb_log_level level,
+                        const char *format,
+                        va_list args);
 
-  static std::pair<std::string, std::string> get_keymap_filepath();
-};
-}  // namespace drmpp::input
+    void handle_repeat_info(int32_t delay, int32_t rate);
+
+    static void repeat_xkb_v1_key_callback(int sig, siginfo_t *si, void *uc);
+
+    static std::pair<std::string, std::string> get_keymap_filepath();
+
+    static void keymap_decompress(const uint8_t *input, int length, uint8_t *output);
+  };
+} // namespace drmpp::input
 
 #endif  // INCLUDE_DRMPP_INPUT_KEYBOARD_H_

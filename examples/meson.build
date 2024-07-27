@@ -55,3 +55,12 @@ executable('drm-hotplug', ['drm_hotplug.cc'],
            ],
            install : true,
 )
+
+executable('drm-lz', ['drm_lz.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : false,
+)

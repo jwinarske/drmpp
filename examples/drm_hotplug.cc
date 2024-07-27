@@ -22,8 +22,6 @@
 
 #include "drmpp.h"
 
-#include "info/info.h"
-
 struct Configuration {
 };
 

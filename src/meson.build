@@ -37,6 +37,7 @@ drmpp_sources = [
     'input/keyboard.cc',
     'input/pointer.cc',
     'input/touch.cc',
+    'input/fastlz.cc',
     'info/info.cc',
     'plane/plane.cc',
 ]

@@ -179,5 +179,56 @@ namespace drmpp::utils {
 
     return result;
   }
+
+  class IosFlagSaver {
+  public:
+    explicit IosFlagSaver(std::ostream &_ios) : ios(_ios), f(_ios.flags()) {
+    }
+
+    ~IosFlagSaver() { ios.flags(f); }
+
+    IosFlagSaver(const IosFlagSaver &rhs) = delete;
+
+    IosFlagSaver &operator=(const IosFlagSaver &rhs) = delete;
+
+  private:
+    std::ostream &ios;
+    std::ios::fmtflags f;
+  };
+
+  template<unsigned RowSize>
+  struct CustomHexHeaderdump {
+    CustomHexHeaderdump(const uint8_t *data, size_t length)
+      : mData(data), mLength(length) {
+    }
+
+    const uint8_t *mData;
+    const size_t mLength;
+  };
+
+  template<unsigned RowSize>
+  std::ostream &operator<<(std::ostream &out,
+                           const CustomHexHeaderdump<RowSize> &dump) {
+    IosFlagSaver ios_fs(out);
+
+    out.fill('0');
+    for (size_t i = 0; i < dump.mLength; i += RowSize) {
+      for (size_t j = 0; j < RowSize; ++j) {
+        if (i + j < dump.mLength) {
+          out << "0x" << std::hex << std::setw(2) << static_cast<int>(dump.mData[i + j]);
+          if (i + j != (dump.mLength - 1)) {
+            out << ", ";
+          }
+        }
+      }
+      if (i == dump.mLength - 1) {
+        out << "\"" << std::endl;
+      } else {
+        out << std::endl;
+      }
+    }
+
+    return out;
+  }
 } // namespace drmpp::utils
 #endif  // INCLUDE_DRMPP_UTILS_H_
