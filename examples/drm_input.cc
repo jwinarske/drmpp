@@ -160,6 +160,13 @@ public:
           std::cout << node_info << std::endl;
         }
       }
+    } else if (xdg_key_symbols[0] == XKB_KEY_a) {
+      std::scoped_lock<std::mutex> lock(cmd_mutex_);
+      drmpp::utils::get_udev_sys_attributes("drm");
+      drmpp::utils::get_udev_sys_attributes("input");
+      drmpp::utils::get_udev_sys_attributes("graphics");
+      drmpp::utils::get_udev_sys_attributes("vtconsole");
+      drmpp::utils::get_udev_sys_attributes("backlight");
     } else if (xdg_key_symbols[0] == XKB_KEY_e) {
       std::scoped_lock<std::mutex> lock(cmd_mutex_);
       auto nodes = drmpp::utils::get_enabled_drm_output_nodes(true);
@@ -195,7 +202,8 @@ public:
             break;
           }
 
-          LOG_INFO("= EDID ===================");
+          LOG_INFO("==========================");
+          LOG_INFO("EDID:");
           print_info(info);
           LOG_INFO("==========================");
           di_info_destroy(info);
@@ -208,48 +216,6 @@ public:
       time, xkb_scancode, keymap_key_repeats,
       state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
       xdg_key_symbol_count, xdg_key_symbols[0]);
-  }
-
-  static std::vector<std::string> get_enabled_and_connected_drm_devices() {
-    std::vector<std::string> result;
-
-    const auto udev = udev_new();
-    if (!udev) {
-      LOG_ERROR("Can't create udev");
-      return {};
-    }
-
-    const auto enumerate = udev_enumerate_new(udev);
-    udev_enumerate_add_match_subsystem(enumerate, "drm");
-    udev_enumerate_scan_devices(enumerate);
-
-    const auto devices = udev_enumerate_get_list_entry(enumerate);
-    udev_list_entry *dev_list_entry;
-    udev_list_entry_foreach(dev_list_entry, devices) {
-      const auto path = udev_list_entry_get_name(dev_list_entry);
-      LOG_INFO("{}", path);
-      const auto dev = udev_device_new_from_syspath(udev, path);
-
-      auto node = udev_device_get_devnode(dev);
-
-      LOG_INFO("Device");
-      LOG_INFO("\tNode: {}", node ? node : "");
-
-      if (!node) {
-        if (strcmp(udev_device_get_sysattr_value(dev, "status"), "connected") == 0 &&
-            strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") == 0) {
-          auto parent = udev_device_get_parent(dev);
-          auto parent_node = udev_device_get_devnode(parent);
-          LOG_INFO("Parent Node: {}", parent_node ? parent_node : "");
-          result.emplace_back(parent_node);
-        }
-      }
-      udev_device_unref(dev);
-    }
-    udev_enumerate_unref(enumerate);
-    udev_unref(udev);
-
-    return result;
   }
 
 private:

@@ -69,7 +69,7 @@ private:
 int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
-  cxxopts::Options options("drm-json", "DRM info to JSON");
+  cxxopts::Options options("drm-caps", "DRM driver caps to JSON");
   options.set_width(80)
       .set_tab_expansion()
       .allow_unrecognised_options()

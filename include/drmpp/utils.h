@@ -81,11 +81,11 @@ namespace drmpp::utils {
       return false;
     }
 
-    char buffer[100]{};
-    std::rewind(fp);
-    while (std::fgets(buffer, sizeof(buffer), fp)) {
-      result.append(buffer);
+    auto buffer = std::make_unique<char>(1024);
+    while (std::fgets(buffer.get(), 1024, fp)) {
+      result.append(buffer.get());
     }
+    buffer.reset();
     DLOG_TRACE("execute: result: ({}) {}", result.size(), result);
 
     if (pclose(fp) == -1) {
@@ -105,6 +105,59 @@ namespace drmpp::utils {
       return true;
     }
     return false;
+  }
+
+  inline void get_udev_sys_attributes(const char *subsystem) {
+    const auto udev = udev_new();
+    if (!udev) {
+      LOG_ERROR("Can't create udev");
+      return;
+    }
+
+    LOG_INFO("=============================");
+    LOG_INFO("{}:", subsystem);
+    const auto enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, subsystem);
+    udev_enumerate_scan_devices(enumerate);
+
+    const auto devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry *dev_list_entry;
+    udev_list_entry_foreach(dev_list_entry, devices) {
+      const auto path = udev_list_entry_get_name(dev_list_entry);
+      const auto dev = udev_device_new_from_syspath(udev, path);
+
+      LOG_INFO("* Device Node");
+      const auto devnode = udev_device_get_devnode(dev);
+      if (devnode) {
+        LOG_INFO("devnode: {}", devnode);
+      } else {
+        const auto parent = udev_device_get_parent(dev);
+        const auto parent_path = udev_device_get_syspath(parent);
+        if (parent_path) {
+          const auto parent_devnode = udev_device_get_devnode(parent);
+          if (parent_devnode) {
+            LOG_INFO("parent: {}", parent_devnode);
+          } else {
+            LOG_INFO("parent: {}", parent_path);
+          }
+        }
+      }
+
+      LOG_INFO("* System Attributes");
+      const auto sys_attr_list = udev_device_get_sysattr_list_entry(dev);
+      udev_list_entry *sys_attr_list_entry;
+      udev_list_entry_foreach(sys_attr_list_entry, sys_attr_list) {
+        const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry);
+        if (sys_attr) {
+          const auto value = udev_device_get_sysattr_value(dev, sys_attr);
+          LOG_INFO("sys_attr: {}: {}", sys_attr, value ? value : "");
+        }
+      }
+
+      udev_device_unref(dev);
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
   }
 
   inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
