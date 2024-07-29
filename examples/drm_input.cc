@@ -123,9 +123,11 @@ public:
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps &= SEAT_CAPABILITIES_KEYBOARD) {
-      auto keyboard = seat_->get_keyboard();
-      if (keyboard.has_value()) {
-        keyboard.value()->register_observer(this, this);
+      auto keyboards = seat_->get_keyboards();
+      if (keyboards.has_value()) {
+        for (auto const &keyboard: *keyboards.value()) {
+          keyboard->register_observer(this, this);
+        }
       }
     }
   }
@@ -139,7 +141,7 @@ public:
     int xdg_key_symbol_count,
     const xkb_keysym_t *xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
-      if (xdg_key_symbols[0] == XKB_KEY_Escape) {
+      if (xdg_key_symbols[0] == XKB_KEY_Escape || xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
       } else if (xdg_key_symbols[0] == XKB_KEY_d) {

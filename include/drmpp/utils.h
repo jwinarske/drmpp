@@ -142,6 +142,16 @@ namespace drmpp::utils {
           }
         }
       }
+      LOG_INFO("* Properties");
+      const auto properties_list = udev_device_get_properties_list_entry(dev);
+      udev_list_entry *properties_list_entry;
+      udev_list_entry_foreach(properties_list_entry, properties_list) {
+        const auto properties_name = udev_list_entry_get_name(properties_list_entry);
+        if (properties_name) {
+          const auto value = udev_device_get_property_value(dev, properties_name);
+          LOG_INFO("{}: {}", properties_name, value ? value : "");
+        }
+      }
 
       LOG_INFO("* System Attributes");
       const auto sys_attr_list = udev_device_get_sysattr_list_entry(dev);

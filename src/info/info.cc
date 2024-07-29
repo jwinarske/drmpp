@@ -254,11 +254,12 @@ namespace drmpp::info {
         drmPlatformDeviceInfo *platform_dev = dev->deviceinfo.platform;
         drmPlatformBusInfo *platform_bus = dev->businfo.platform;
         for (size_t i = 0; platform_dev->compatible[i]; ++i) {
+          LOG_INFO("compatible: {}", platform_dev->compatible[i]);
           compatible_arr.PushBack(
             rapidjson::Value().SetString(
               platform_dev->compatible[i],
               std::strlen(platform_dev->compatible[i])).Move(),
-            allocator);
+            allocator).Move();
         }
         device_data_obj.AddMember("compatible", compatible_arr, allocator);
 

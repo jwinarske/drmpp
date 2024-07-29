@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <fcntl.h>
 #include <libinput.h>
@@ -64,7 +65,7 @@ class Seat {
 
   [[nodiscard]] const std::string& get_name() const { return name_; }
 
-  [[nodiscard]] std::optional<Keyboard*> get_keyboard() const;
+  [[nodiscard]] std::optional<std::shared_ptr<std::vector<std::unique_ptr<Keyboard>>>> get_keyboards() const;
 
   //[[nodiscard]] std::optional<Pointer *> get_pointer() const;
 
@@ -89,7 +90,7 @@ class Seat {
   std::list<SeatObserver*> observers_{};
   std::mutex observers_mutex_{};
 
-  std::unique_ptr<Keyboard> keyboard_;
+  std::shared_ptr<std::vector<std::unique_ptr<Keyboard>>> keyboards_;
   // std::unique_ptr<Pointer> pointer_;
   // std::unique_ptr<Touch> touch_;
 
