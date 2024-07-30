@@ -107,6 +107,53 @@ namespace drmpp::utils {
     return false;
   }
 
+  inline std::unordered_map<std::string, std::string> get_udev_fb_sys_attributes() {
+    std::unordered_map<std::string, std::string> results;
+    const auto udev = udev_new();
+    if (!udev) {
+      LOG_ERROR("Can't create udev");
+      return results;
+    }
+
+    const auto enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "graphics");
+    udev_enumerate_scan_devices(enumerate);
+
+    const auto devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry *dev_list_entry;
+    udev_list_entry_foreach(dev_list_entry, devices) {
+      const auto path = udev_list_entry_get_name(dev_list_entry);
+      LOG_DEBUG("path: {}", path);
+      if (strcmp(path, "fbcon") == 0) {
+        continue;
+      }
+      const auto dev = udev_device_new_from_syspath(udev, path);
+
+      const auto properties_list = udev_device_get_properties_list_entry(dev);
+      udev_list_entry *properties_list_entry;
+      udev_list_entry_foreach(properties_list_entry, properties_list) {
+        const auto properties_name = udev_list_entry_get_name(properties_list_entry);
+        if (properties_name) {
+          const auto value = udev_device_get_property_value(dev, properties_name);
+          results[properties_name] = value ? value : "";
+        }
+      }
+
+      const auto sys_attr_list = udev_device_get_sysattr_list_entry(dev);
+      udev_list_entry *sys_attr_list_entry;
+      udev_list_entry_foreach(sys_attr_list_entry, sys_attr_list) {
+        const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry);
+        if (sys_attr) {
+          const auto value = udev_device_get_sysattr_value(dev, sys_attr);
+          results[sys_attr] = value ? value : "";
+        }
+      }
+      udev_device_unref(dev);
+    }
+    udev_unref(udev);
+    return results;
+  }
+
   inline void get_udev_sys_attributes(const char *subsystem) {
     const auto udev = udev_new();
     if (!udev) {
@@ -192,7 +239,10 @@ namespace drmpp::utils {
         if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") == 0) {
           const auto parent = udev_device_get_parent(dev);
           auto parent_node = udev_device_get_devnode(parent);
-          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected") == 0) {
+          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected")
+              ==
+              0
+          ) {
             result.emplace_back(parent_node);
           } else {
             result.emplace_back(parent_node);
@@ -228,7 +278,10 @@ namespace drmpp::utils {
 
       if (!udev_device_get_devnode(dev)) {
         if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") == 0) {
-          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected") == 0) {
+          if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"), "connected")
+              ==
+              0
+          ) {
             result.emplace_back(path);
           } else {
             result.emplace_back(path);
@@ -259,7 +312,10 @@ namespace drmpp::utils {
     std::ios::fmtflags f;
   };
 
-  template<unsigned RowSize>
+  template
+  <
+    unsigned RowSize
+  >
   struct CustomHexHeaderdump {
     CustomHexHeaderdump(const uint8_t *data, size_t length)
       : mData(data), mLength(length) {
@@ -269,9 +325,14 @@ namespace drmpp::utils {
     const size_t mLength;
   };
 
-  template<unsigned RowSize>
+  template
+  <
+    unsigned RowSize
+  >
   std::ostream &operator<<(std::ostream &out,
-                           const CustomHexHeaderdump<RowSize> &dump) {
+
+                           const CustomHexHeaderdump<RowSize> &dump
+  ) {
     IosFlagSaver ios_fs(out);
 
     out.fill('0');

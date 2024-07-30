@@ -65,6 +65,15 @@ executable('drm-modes', ['drm_modes.cc'],
            install : true,
 )
 
+executable('drm-fb', ['drm_fb.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : true,
+)
+
 executable('drm-lz', ['drm_lz.cc'],
            include_directories : incdirs,
            dependencies : [
