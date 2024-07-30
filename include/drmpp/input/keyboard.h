@@ -108,8 +108,6 @@ namespace drmpp::input {
     static void repeat_xkb_v1_key_callback(int sig, siginfo_t *si, void *uc);
 
     static std::pair<std::string, std::string> get_keymap_filepath();
-
-    static void keymap_decompress(const uint8_t *input, int length, uint8_t *output);
   };
 } // namespace drmpp::input
 

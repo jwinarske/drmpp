@@ -354,5 +354,49 @@ namespace drmpp::utils {
 
     return out;
   }
+
+  inline void asset_decompress(const uint8_t *input, const int length, uint8_t *output) {
+    int src = 0;
+    int dest = 0;
+    while (src < length) {
+      int type = input[src] >> 5;
+      if (type == 0) {
+        // literal run
+        int run = 1 + input[src];
+        src = src + 1;
+        while (run > 0) {
+          output[dest] = input[src];
+          src = src + 1;
+          dest = dest + 1;
+          run = run - 1;
+        }
+      } else if (type < 7) {
+        // short match
+        const int ofs = 256 * (input[src] & 31) + input[src + 1];
+        int len = 2 + (input[src] >> 5);
+        src = src + 2;
+        int ref = dest - ofs - 1;
+        while (len > 0) {
+          output[dest] = output[ref];
+          ref = ref + 1;
+          dest = dest + 1;
+          len = len - 1;
+        }
+      } else {
+        // long match
+        const int ofs = 256 * (input[src] & 31) + input[src + 2];
+        int len = 9 + input[src + 1];
+        src = src + 3;
+        int ref = dest - ofs - 1;
+        while (len > 0) {
+          output[dest] = output[ref];
+          ref = ref + 1;
+          dest = dest + 1;
+          len = len - 1;
+        }
+      }
+    }
+  }
+
 } // namespace drmpp::utils
 #endif  // INCLUDE_DRMPP_UTILS_H_

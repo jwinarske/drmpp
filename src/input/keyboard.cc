@@ -60,56 +60,14 @@ namespace drmpp::input {
     observers_.remove(observer);
   }
 
-  void Keyboard::keymap_decompress(const uint8_t *input, const int length, uint8_t *output) {
-    int src = 0;
-    int dest = 0;
-    while (src < length) {
-      int type = input[src] >> 5;
-      if (type == 0) {
-        // literal run
-        int run = 1 + input[src];
-        src = src + 1;
-        while (run > 0) {
-          output[dest] = input[src];
-          src = src + 1;
-          dest = dest + 1;
-          run = run - 1;
-        }
-      } else if (type < 7) {
-        // short match
-        const int ofs = 256 * (input[src] & 31) + input[src + 1];
-        int len = 2 + (input[src] >> 5);
-        src = src + 2;
-        int ref = dest - ofs - 1;
-        while (len > 0) {
-          output[dest] = output[ref];
-          ref = ref + 1;
-          dest = dest + 1;
-          len = len - 1;
-        }
-      } else {
-        // long match
-        const int ofs = 256 * (input[src] & 31) + input[src + 2];
-        int len = 9 + input[src + 1];
-        src = src + 3;
-        int ref = dest - ofs - 1;
-        while (len > 0) {
-          output[dest] = output[ref];
-          ref = ref + 1;
-          dest = dest + 1;
-          len = len - 1;
-        }
-      }
-    }
-  }
 
   void Keyboard::load_default_keymap() {
     if (xkb_keymap_) {
       xkb_keymap_unref(xkb_keymap_);
     }
 
-    auto *buffer = static_cast<char *>(calloc(1, kXkeyap_legnth));
-    keymap_decompress(kXkeymap, std::size(kXkeymap), reinterpret_cast<uint8_t *>(buffer));
+    auto *buffer = static_cast<char *>(calloc(1, kXkeymap_uncompressed_length));
+    utils::asset_decompress(kXkeymap, std::size(kXkeymap), reinterpret_cast<uint8_t *>(buffer));
 
     xkb_keymap_ = xkb_keymap_new_from_buffer(xkb_context_, buffer, std::strlen(buffer),
                                              XKB_KEYMAP_FORMAT_TEXT_V1,

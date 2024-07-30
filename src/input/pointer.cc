@@ -5,6 +5,8 @@
 
 #include "drmpp.h"
 
+#include "input/left_ptr_default.h"
+
 namespace drmpp::input {
     /**
      * @brief Pointer class represents a libinput pointer device.
@@ -30,6 +32,12 @@ namespace drmpp::input {
         event_mask_.axis = event_mask.axis;
         event_mask_.buttons = event_mask.buttons;
         event_mask_.motion = event_mask.motion;
+
+        if (!disable_cursor) {
+            auto *buffer = static_cast<char *>(calloc(1, kCursor_LeftPtr_uncompressed_length));
+            utils::asset_decompress(kCursor_LeftPtr, std::size(kCursor_LeftPtr), reinterpret_cast<uint8_t *>(buffer));
+            free(buffer);
+        }
     }
 
     Pointer::~Pointer() {
