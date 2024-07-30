@@ -74,6 +74,15 @@ executable('drm-fb', ['drm_fb.cc'],
            install : true,
 )
 
+executable('drm-cursor', ['drm_cursor.cc'],
+           include_directories : incdirs,
+           dependencies : [
+               cxxopts_dep,
+               drmp_dep,
+           ],
+           install : true,
+)
+
 executable('drm-lz', ['drm_lz.cc'],
            include_directories : incdirs,
            dependencies : [

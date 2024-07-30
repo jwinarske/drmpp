@@ -28,6 +28,8 @@
 #include "config.h"
 
 extern "C" {
+#include <libdisplay-info/info.h>
+#include <libinput.h>
 #include <libliftoff.h>
 }
 

@@ -8,6 +8,7 @@
 
 #include "drmpp.h"
 #include "input/keyboard.h"
+#include "input/pointer.h"
 
 namespace drmpp::input {
   /**
@@ -23,6 +24,31 @@ namespace drmpp::input {
              const char *seat_id)
     : udev_(udev_new()), disable_cursor_(disable_cursor) {
     li_ = libinput_udev_create_context(&interface_, nullptr, udev_);
+    libinput_log_set_priority(li_, LIBINPUT_LOG_PRIORITY_INFO);
+    libinput_log_set_handler(li_, [](libinput * /* libinput */, const libinput_log_priority priority,
+                                     const char *format,
+                                     va_list args) {
+      std::vector<char> buff(1024);
+      if (vsnprintf(buff.data(), 1024, format, args) < 0) {
+        LOG_ERROR("libinput log exceeded 1024 in length");
+        return;
+      }
+      std::string result(&buff[0]);
+      switch (priority) {
+        case LIBINPUT_LOG_PRIORITY_DEBUG:
+          LOG_DEBUG("[libinput] {}", utils::trim(result, "\n"));
+          break;
+        case LIBINPUT_LOG_PRIORITY_INFO:
+          LOG_INFO("[libinput] {}", utils::trim(result, "\n"));
+          break;
+        case LIBINPUT_LOG_PRIORITY_ERROR:
+          LOG_ERROR("[libinput] {}", utils::trim(result, "\n"));
+          break;
+        default:
+          break;
+      }
+    });
+
     libinput_udev_assign_seat(li_, seat_id);
 
     if (ignore_events) {
@@ -93,13 +119,18 @@ namespace drmpp::input {
             DLOG_TRACE("Added Gesture: {}", name);
           }
           if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_POINTER)) {
-            capabilities_ |= SeatObserver::SEAT_CAPABILITIES_CAP_POINTER;
-            DLOG_TRACE("Added Pointer: {}", name);
+            if (libinput_device_pointer_has_button(dev, BTN_LEFT)) {
+              if (!pointer_) {
+                pointer_ = std::make_shared<Pointer>(disable_cursor_, event_mask_.pointer);
+              }
+              capabilities_ |= SeatObserver::SEAT_CAPABILITIES_POINTER;
+              DLOG_TRACE("Added Pointer: {}", name);
+            }
           }
           if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
             if (libinput_device_keyboard_has_key(dev, KEY_ENTER) ||
                 libinput_device_keyboard_has_key(dev, KEY_KPENTER)) {
-              auto udev_device = libinput_device_get_udev_device(dev);
+              const auto udev_device = libinput_device_get_udev_device(dev);
               if (!keyboards_) {
                 keyboards_ = std::make_shared<std::vector<std::unique_ptr<Keyboard> > >();
               }
@@ -163,11 +194,16 @@ namespace drmpp::input {
           break;
         }
         case LIBINPUT_EVENT_POINTER_BUTTON:
+          pointer_->handle_pointer_button_event(libinput_event_get_pointer_event(ev));
+          break;
         case LIBINPUT_EVENT_POINTER_MOTION:
+          pointer_->handle_pointer_motion_event(libinput_event_get_pointer_event(ev));
+          break;
         case LIBINPUT_EVENT_POINTER_AXIS:
+          pointer_->handle_pointer_axis_event(libinput_event_get_pointer_event(ev));
+          break;
         case LIBINPUT_EVENT_POINTER_MOTION_ABSOLUTE: {
-          // const auto pointer_event = libinput_event_get_pointer_event(ev);
-          // TODO handle_pointer_event(type, pointer_event);
+          pointer_->handle_pointer_motion_absolute_event(libinput_event_get_pointer_event(ev));
           break;
         }
         default: {
@@ -175,8 +211,8 @@ namespace drmpp::input {
           break;
         }
       }
+      libinput_event_destroy(ev);
     }
-    libinput_event_destroy(ev);
 
     return true;
   }
@@ -188,14 +224,12 @@ namespace drmpp::input {
     return {};
   }
 
-#if 0
-    std::optional<Pointer *> Seat::get_pointer() const {
-        if (pointer_) {
-            return pointer_.get();
-        }
-        return {};
+  std::optional<std::shared_ptr<Pointer> > Seat::get_pointer() const {
+    if (!pointer_) {
+      return {};
     }
-#endif
+    return pointer_;
+  }
 
   void Seat::event_mask_print() const {
     const std::string out;
