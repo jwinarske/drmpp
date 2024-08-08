@@ -1,0 +1,46 @@
+
+name: ubuntu-latest
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
+    # You can convert this to a matrix build if you need cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip' # caching pip dependencies          
+
+      - name: Install Packages
+        run: |
+          echo ${{ github.server_url }}
+          pip install --user meson
+          sudo apt-get -y install ninja-build \
+          libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev
+          meson --version
+          gcc --version
+
+      - name: Configure Meson
+        run: |
+          cd ${{github.workspace}}
+          meson buildDir --default-library static
+
+      - name: Build
+        # Build your program with the given configuration
+        run: ninja -C ${{github.workspace}}/buildDir
