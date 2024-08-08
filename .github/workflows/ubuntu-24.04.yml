@@ -39,7 +39,7 @@ jobs:
       - name: Configure Meson
         run: |
           cd ${{github.workspace}}
-          meson buildDir --default-library static
+          meson setup buildDir --default-library static
 
       - name: Build
         # Build your program with the given configuration
