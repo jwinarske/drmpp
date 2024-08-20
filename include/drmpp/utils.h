@@ -72,9 +72,29 @@ namespace drmpp::utils {
     return result;
   }
 
-  inline bool execute(const char *cmd, std::string &result) {
+  inline int is_safe_char(const char c) {
+    // Only allow alphanumeric characters and a few safe symbols
+    return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-' || c == '/' || c == '.';
+  }
+
+  inline std::string sanitize_cmd(const std::string &cmd) {
+    std::string safe_cmd;
+    for (const char c: cmd) {
+      if (is_safe_char(c)) {
+        safe_cmd += c;
+      }
+    }
+    return safe_cmd;
+  }
+
+  inline bool execute(const std::string &cmd, std::string &result) {
     DLOG_TRACE("execute: cmd: {}", cmd);
-    const auto fp = popen(cmd, "r");
+    if (cmd.empty()) {
+      spdlog::error("execute: cmd is empty");
+      return false;
+    }
+    const std::string safe_cmd = sanitize_cmd(cmd);
+    const auto fp = popen(safe_cmd.c_str(), "r");
     if (!fp) {
       LOG_ERROR("Failed to execute cmd: {}, ({}) {}", cmd, errno,
                 strerror(errno));
@@ -397,6 +417,5 @@ namespace drmpp::utils {
       }
     }
   }
-
 } // namespace drmpp::utils
 #endif  // INCLUDE_DRMPP_UTILS_H_

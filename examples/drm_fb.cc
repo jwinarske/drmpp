@@ -101,7 +101,8 @@ public:
 		LOG_INFO("line_length: {}", fb_info_.fix.line_length);
 
 		fb_info_.ptr = mmap(nullptr,
-		                    fb_info_.var.yres_virtual * fb_info_.fix.line_length,
+		                    static_cast<size_t>(fb_info_.var.yres_virtual) * static_cast<size_t>(fb_info_.fix.
+			                    line_length),
 		                    PROT_WRITE | PROT_READ,
 		                    MAP_SHARED, fb_info_.fd, 0);
 
@@ -110,7 +111,8 @@ public:
 
 	~App() {
 		close(fb_info_.fd);
-		munmap(fb_info_.ptr, fb_info_.var.yres_virtual * fb_info_.fix.line_length);
+		munmap(fb_info_.ptr, static_cast<size_t>(fb_info_.var.yres_virtual) * static_cast<size_t>(fb_info_.fix.
+			                     line_length));
 	}
 
 	static void paint_pixels(void *image,
