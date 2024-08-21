@@ -32,8 +32,7 @@ extern "C" {
 
 #include "drmpp.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -56,20 +55,18 @@ void handle_signal(const int signal) {
 
 class App final : public drmpp::input::KeyboardObserver,
                   public drmpp::input::SeatObserver {
-public:
-  explicit App(const Configuration & /*config */)
-    : logging_(std::make_unique<Logging>()) {
+ public:
+  explicit App(const Configuration& /*config */)
+      : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
 
   ~App() override { seat_.reset(); }
 
-  [[nodiscard]] bool run() const {
-    return seat_->run_once();
-  }
+  [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  static void print_info(const di_info *info) {
+  static void print_info(const di_info* info) {
     auto str = di_info_get_make(info);
     LOG_INFO("make: [{}]", str ? str : "");
     free(str);
@@ -93,16 +90,19 @@ public:
     LOG_INFO("\tEOTF tSDR: {}, tHDR: {}, PQ: {}, HLG: {}",
              hdr_static->traditional_sdr ? "yes" : "no",
              hdr_static->traditional_hdr ? "yes" : "no",
-             hdr_static->pq ? "yes" : "no",
-             hdr_static->hlg ? "yes" : "no");
+             hdr_static->pq ? "yes" : "no", hdr_static->hlg ? "yes" : "no");
 
     const auto primaries = di_info_get_default_color_primaries(info);
     assert(primaries);
     LOG_INFO("default color primaries");
-    LOG_INFO("\t{}: {:.3f}, {:.3f}", "    red", primaries->primary[0].x, primaries->primary[0].y);
-    LOG_INFO("\t{}: {:.3f}, {:.3f}", "  green", primaries->primary[1].x, primaries->primary[1].y);
-    LOG_INFO("\t{}: {:.3f}, {:.3f}", "   blue", primaries->primary[2].x, primaries->primary[2].y);
-    LOG_INFO("\t{}: {:.3f}, {:.3f}", "default white", primaries->default_white.x, primaries->default_white.y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "    red", primaries->primary[0].x,
+             primaries->primary[0].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "  green", primaries->primary[1].x,
+             primaries->primary[1].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "   blue", primaries->primary[2].x,
+             primaries->primary[2].y);
+    LOG_INFO("\t{}: {:.3f}, {:.3f}", "default white",
+             primaries->default_white.x, primaries->default_white.y);
     LOG_INFO("default gamma: {:.2f}", di_info_get_default_gamma(info));
 
     const auto ssc = di_info_get_supported_signal_colorimetry(info);
@@ -119,13 +119,13 @@ public:
       LOG_INFO("signal colorimetry: ICtCp");
   }
 
-  void notify_seat_capabilities(drmpp::input::Seat *seat,
+  void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps &= SEAT_CAPABILITIES_KEYBOARD) {
       auto keyboards = seat_->get_keyboards();
       if (keyboards.has_value()) {
-        for (auto const &keyboard: *keyboards.value()) {
+        for (auto const& keyboard : *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
       }
@@ -133,15 +133,16 @@ public:
   }
 
   void notify_keyboard_xkb_v1_key(
-    drmpp::input::Keyboard *keyboard,
-    uint32_t time,
-    uint32_t xkb_scancode,
-    bool keymap_key_repeats,
-    const uint32_t state,
-    int xdg_key_symbol_count,
-    const xkb_keysym_t *xdg_key_symbols) override {
+      drmpp::input::Keyboard* keyboard,
+      uint32_t time,
+      uint32_t xkb_scancode,
+      bool keymap_key_repeats,
+      const uint32_t state,
+      int xdg_key_symbol_count,
+      const xkb_keysym_t* xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
-      if (xdg_key_symbols[0] == XKB_KEY_Escape || xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
+      if (xdg_key_symbols[0] == XKB_KEY_Escape ||
+          xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
       } else if (xdg_key_symbols[0] == XKB_KEY_d) {
@@ -156,77 +157,158 @@ public:
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
-        for (const auto &node: nodes) {
+        for (const auto& node : nodes) {
           std::string node_info =
               drmpp::info::DrmInfo::get_node_info(node.c_str());
           std::cout << node_info << std::endl;
         }
+      } else if (xdg_key_symbols[0] == XKB_KEY_a) {
+        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        drmpp::utils::get_udev_sys_attributes("drm");
+        drmpp::utils::get_udev_sys_attributes("input");
+        drmpp::utils::get_udev_sys_attributes("graphics");
+        drmpp::utils::get_udev_sys_attributes("vtconsole");
+        drmpp::utils::get_udev_sys_attributes("backlight");
+      } else if (xdg_key_symbols[0] == XKB_KEY_e) {
+        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        auto nodes = drmpp::utils::get_enabled_drm_output_nodes(true);
+        for (const auto& node : nodes) {
+          std::string edid_path = node + std::string("/edid");
+          FILE* f = fopen(edid_path.c_str(), "r");
+          if (!f) {
+            DLOG_DEBUG("Failed to load file: {}", edid_path);
+            return;
+          }
+
+          // Read EDID
+          static uint8_t raw[32 * 1024];
+          size_t size{};
+          while (!feof(f)) {
+            size += fread(&raw[size], 1, sizeof(raw) - size, f);
+            if (ferror(f)) {
+              LOG_ERROR("fread failed");
+              break;
+            }
+            if (size >= sizeof(raw)) {
+              LOG_ERROR("Input too large");
+              break;
+            }
+          }
+          fclose(f);
+
+          // Parse EDID
+          if (size) {
+            auto info = di_info_parse_edid(raw, size);
+            if (!info) {
+              LOG_ERROR("di_edid_parse failed");
+              break;
+            }
+
+            LOG_INFO("==========================");
+            LOG_INFO("EDID:");
+            print_info(info);
+            LOG_INFO("==========================");
+            di_info_destroy(info);
+          }
+        }
       }
-    } else if (xdg_key_symbols[0] == XKB_KEY_a) {
+    } else if (xdg_key_symbols[0] == XKB_KEY_m) {
       std::scoped_lock<std::mutex> lock(cmd_mutex_);
-      drmpp::utils::get_udev_sys_attributes("drm");
-      drmpp::utils::get_udev_sys_attributes("input");
-      drmpp::utils::get_udev_sys_attributes("graphics");
-      drmpp::utils::get_udev_sys_attributes("vtconsole");
-      drmpp::utils::get_udev_sys_attributes("backlight");
-    } else if (xdg_key_symbols[0] == XKB_KEY_e) {
-      std::scoped_lock<std::mutex> lock(cmd_mutex_);
-      auto nodes = drmpp::utils::get_enabled_drm_output_nodes(true);
-      for (const auto &node: nodes) {
-        std::string edid_path = node + std::string("/edid");
-        FILE *f = fopen(edid_path.c_str(), "r");
-        if (!f) {
-          DLOG_DEBUG("Failed to load file: {}", edid_path);
-          return;
+      for (const auto& node : drmpp::utils::get_enabled_drm_nodes(false)) {
+        const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
+        if (drm_fd < 0) {
+          LOG_ERROR("Failed to open {}", node.c_str());
+          break;
         }
 
-        // Read EDID
-        static uint8_t raw[32 * 1024];
-        size_t size{};
-        while (!feof(f)) {
-          size += fread(&raw[size], 1, sizeof(raw) - size, f);
-          if (ferror(f)) {
-            LOG_ERROR("fread failed");
-            break;
-          }
-          if (size >= sizeof(raw)) {
-            LOG_ERROR("Input too large");
-            break;
-          }
+        LOG_INFO("** {} **", node);
+        if (drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+          LOG_ERROR("drmSetClientCap(ATOMIC)");
+          break;
         }
-        fclose(f);
 
-        // Parse EDID
-        if (size) {
-          auto info = di_info_parse_edid(raw, size);
-          if (!info) {
-            LOG_ERROR("di_edid_parse failed");
-            break;
+        const auto drm_res = drmModeGetResources(drm_fd);
+        for (auto i = 0; i < drm_res->count_connectors; i++) {
+          const auto connector =
+              drmModeGetConnector(drm_fd, drm_res->connectors[i]);
+          if (connector->connection != DRM_MODE_CONNECTED) {
+            continue;
           }
+          LOG_INFO("\tid: {}", connector->connector_id);
+          LOG_INFO("\ttype: {}", connector->connector_type);
+          switch (connector->connection) {
+            case DRM_MODE_CONNECTED:
+              LOG_INFO("\tconnection: DRM_MODE_CONNECTED");
+              break;
+            case DRM_MODE_DISCONNECTED:
+              LOG_INFO("\tconnection: DRM_MODE_DISCONNECTED");
+              break;
+            case DRM_MODE_UNKNOWNCONNECTION:
+              LOG_INFO("\tconnection: DRM_MODE_UNKNOWNCONNECTION");
+              break;
+          }
+          LOG_INFO("\tphy_width: {}", connector->mmWidth);
+          LOG_INFO("\tphy_height: {}", connector->mmHeight);
+          switch (connector->subpixel) {
+            case DRM_MODE_SUBPIXEL_UNKNOWN:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_UNKNOWN");
+              break;
+            case DRM_MODE_SUBPIXEL_HORIZONTAL_RGB:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_HORIZONTAL_RGB");
+              break;
+            case DRM_MODE_SUBPIXEL_HORIZONTAL_BGR:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_HORIZONTAL_BGR");
+              break;
+            case DRM_MODE_SUBPIXEL_VERTICAL_RGB:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_VERTICAL_RGB");
+              break;
+            case DRM_MODE_SUBPIXEL_VERTICAL_BGR:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_VERTICAL_BGR");
+              break;
+            case DRM_MODE_SUBPIXEL_NONE:
+              LOG_INFO("\tsubpixel: DRM_MODE_SUBPIXEL_NONE");
+              break;
+          }
+          LOG_INFO("\tencoder_id: {}", connector->encoder_id);
 
-          LOG_INFO("==========================");
-          LOG_INFO("EDID:");
-          print_info(info);
-          LOG_INFO("==========================");
-          di_info_destroy(info);
+          for (int j = 0; j < connector->count_modes; ++j) {
+            const drmModeModeInfo* mode = &connector->modes[j];
+            LOG_INFO("\t* {}", mode->name);
+            LOG_INFO("\t\tclock: {}", mode->clock);
+            LOG_INFO("\t\thdisplay: {}", mode->hdisplay);
+            LOG_INFO("\t\thsync_start: {}", mode->hsync_start);
+            LOG_INFO("\t\thsync_end: {}", mode->hsync_end);
+            LOG_INFO("\t\thtotal: {}", mode->htotal);
+            LOG_INFO("\t\thskew: {}", mode->hskew);
+            LOG_INFO("\t\tvdisplay: {}", mode->vdisplay);
+            LOG_INFO("\t\tvsync_start: {}", mode->vsync_start);
+            LOG_INFO("\t\tvsync_end: {}", mode->vsync_end);
+            LOG_INFO("\t\tvtotal: {}", mode->vtotal);
+            LOG_INFO("\t\tvscan: {}", mode->vscan);
+            LOG_INFO("\t\tvrefresh: {}", mode->vrefresh);
+            LOG_INFO("\t\tflags: {}", mode->flags);
+            LOG_INFO("\t\ttype: {}", mode->type);
+          }
+          drmModeFreeConnector(connector);
         }
+        drmModeFreeResources(drm_res);
       }
+      LOG_INFO(
+          "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+          "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+          time, xkb_scancode, keymap_key_repeats,
+          state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+          xdg_key_symbol_count, xdg_key_symbols[0]);
     }
-    LOG_INFO(
-      "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-      "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-      time, xkb_scancode, keymap_key_repeats,
-      state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-      xdg_key_symbol_count, xdg_key_symbols[0]);
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-input", "Input information");
