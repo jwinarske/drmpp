@@ -106,13 +106,13 @@ public:
 			drmpp::plane::Common::dumb_fb fbs[kLayersLen]{};
 			layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
 			                      crtc->mode.vdisplay, false, true, &fbs[0]);
-			for (auto i = 1; i < kLayersLen; i++) {
+			for (uint32_t i = 1; i < kLayersLen; i++) {
 				layers[i] = add_layer(drm_fd, output, 100 * (int) i, 100 * (int) i,
 				                      256, 256, i % 2, false, &fbs[i]);
 			}
 
 			liftoff_layer_set_property(composition_layer, "zpos", 0);
-			for (auto i = 0; i < kLayersLen; i++) {
+			for (uint32_t i = 0; i < kLayersLen; i++) {
 				liftoff_layer_set_property(layers[i], "zpos", i);
 			}
 
@@ -127,7 +127,7 @@ public:
 			}
 
 			// Composite layers that didn't make it into a plane
-			for (auto i = 1; i < kLayersLen; i++) {
+			for (uint32_t i = 1; i < kLayersLen; i++) {
 				if (liftoff_layer_needs_composition(layers[i])) {
 					composite(drm_fd, &composition_fb, &fbs[i],
 					          (int) i * 100, (int) i * 100);
@@ -143,7 +143,7 @@ public:
 			auto plane = liftoff_layer_get_plane(composition_layer);
 			printf("Composition layer got assigned to plane %u\n",
 			       plane ? liftoff_plane_get_id(plane) : 0);
-			for (int i = 0; i < kLayersLen; i++) {
+			for (uint32_t i = 0; i < kLayersLen; i++) {
 				plane = liftoff_layer_get_plane(layers[i]);
 				LOG_INFO("Layer {} got assigned to plane {}", i, plane ? liftoff_plane_get_id(plane) : 0);
 			}
