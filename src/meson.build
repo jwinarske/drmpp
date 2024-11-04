@@ -47,6 +47,9 @@ drmpp_sources = [
     'drm/libdrm.cc',
     'gbm/libgbm.cc',
     'utils/virtual_terminal.cc',
+    'buffer.cc',
+    'device.cc',
+    'output.cc',
 ]
 
 drmpp_lib = library('drmpp',

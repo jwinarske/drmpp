@@ -14,34 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef INCLUDE_DRMPP_H_
-#define INCLUDE_DRMPP_H_
+#include "buffer.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstdio>
 #include <cstring>
 
-#include "config.h"
+void drmpp::Buffer::fill(const uint32_t fourByteColor) {
+  uint32_t offset, stride;
+  std::size_t size;
 
-extern "C" {
-#include <libdisplay-info/info.h>
-#include <libinput.h>
-#include <libliftoff.h>
+  void* buffer = map(offset, stride, size, 0);
+  if (!buffer) {
+    return;
+  }
+
+  // fill the buffer, starting from buffer + offset to buffer + offset + size
+  // with repeating 4-byte color
+  for (std::size_t i = 0; i < size; i += 4) {
+    std::memcpy(static_cast<uint8_t*>(buffer) + offset + i, &fourByteColor, 4);
+  }
+
+  unmap(buffer);
 }
-
-#include "buffer.h"
-#include "composition.h"
-#include "cursor/xcursor.h"
-#include "device.h"
-#include "output.h"
-
-#include "info/info.h"
-#include "input/keyboard.h"
-#include "input/pointer.h"
-#include "input/seat.h"
-#include "input/touch.h"
-#include "logging/logging.h"
-#include "plane/plane.h"
-
-#endif  // INCLUDE_DRMPP_H_

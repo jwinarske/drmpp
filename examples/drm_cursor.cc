@@ -115,6 +115,13 @@ public:
     LOG_TRACE("x: {}, y: {}", sx, sy);
   }
 
+  void notify_pointer_motion_absolute(drmpp::input::Pointer *pointer,
+                                      uint32_t time,
+                                      double ndc_x,
+                                      double ndc_y) override {
+    LOG_TRACE("ndc x: {}, ndc y: {}", ndc_x, ndc_y);
+  }
+
   void notify_pointer_button(drmpp::input::Pointer *pointer,
                              uint32_t serial,
                              uint32_t time,
