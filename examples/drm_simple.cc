@@ -222,8 +222,7 @@ int main(const int argc, char** argv) {
 
   const App app({});
 
-  while (gRunning && app.run()) {
-  }
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

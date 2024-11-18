@@ -23,8 +23,7 @@
 
 #include "drmpp.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -48,32 +47,29 @@ void handle_signal(const int signal) {
 class App final : public drmpp::input::KeyboardObserver,
                   public drmpp::input::PointerObserver,
                   public drmpp::input::SeatObserver {
-public:
-  explicit App(const Configuration & /*config */)
-    : logging_(std::make_unique<Logging>()) {
+ public:
+  explicit App(const Configuration& /*config */)
+      : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
 
   ~App() override { seat_.reset(); }
 
-  [[nodiscard]] bool run() const {
-    return seat_->run_once();
-  }
+  [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  void notify_seat_capabilities(drmpp::input::Seat *seat,
+  void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
-    if (caps &= SEAT_CAPABILITIES_POINTER) {
-      auto pointer = seat_->get_pointer();
-      if (pointer.has_value()) {
+    if (caps & SEAT_CAPABILITIES_POINTER) {
+      if (const auto pointer = seat_->get_pointer(); pointer.has_value()) {
         pointer.value()->register_observer(this, this);
       }
     }
-    if (caps &= SEAT_CAPABILITIES_KEYBOARD) {
-      auto keyboards = seat_->get_keyboards();
-      if (keyboards.has_value()) {
-        for (auto const &keyboard: *keyboards.value()) {
+    if (caps & SEAT_CAPABILITIES_KEYBOARD) {
+      if (const auto keyboards = seat_->get_keyboards();
+          keyboards.has_value()) {
+        for (auto const& keyboard : *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
       }
@@ -81,15 +77,16 @@ public:
   }
 
   void notify_keyboard_xkb_v1_key(
-    drmpp::input::Keyboard *keyboard,
-    uint32_t time,
-    uint32_t xkb_scancode,
-    bool keymap_key_repeats,
-    const uint32_t state,
-    int xdg_key_symbol_count,
-    const xkb_keysym_t *xdg_key_symbols) override {
+      drmpp::input::Keyboard* keyboard,
+      uint32_t time,
+      uint32_t xkb_scancode,
+      bool keymap_key_repeats,
+      const uint32_t state,
+      int xdg_key_symbol_count,
+      const xkb_keysym_t* xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
-      if (xdg_key_symbols[0] == XKB_KEY_Escape || xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
+      if (xdg_key_symbols[0] == XKB_KEY_Escape ||
+          xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
       }
@@ -100,21 +97,21 @@ public:
       }
     }
     LOG_INFO(
-      "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-      "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-      time, xkb_scancode, keymap_key_repeats,
-      state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-      xdg_key_symbol_count, xdg_key_symbols[0]);
+        "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+        "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+        time, xkb_scancode, keymap_key_repeats,
+        state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+        xdg_key_symbol_count, xdg_key_symbols[0]);
   }
 
-  void notify_pointer_motion(drmpp::input::Pointer *pointer,
+  void notify_pointer_motion(drmpp::input::Pointer* pointer,
                              uint32_t time,
                              double sx,
                              double sy) override {
     LOG_TRACE("x: {}, y: {}", sx, sy);
   }
 
-  void notify_pointer_button(drmpp::input::Pointer *pointer,
+  void notify_pointer_button(drmpp::input::Pointer* pointer,
                              uint32_t serial,
                              uint32_t time,
                              uint32_t button,
@@ -122,41 +119,41 @@ public:
     LOG_INFO("button: {}, state: {}", button, state);
   }
 
-  void notify_pointer_axis(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis(drmpp::input::Pointer* pointer,
                            uint32_t time,
                            uint32_t axis,
                            double value) override {
     LOG_INFO("axis: {}", axis);
   }
 
-  void notify_pointer_frame(drmpp::input::Pointer *pointer) override {
+  void notify_pointer_frame(drmpp::input::Pointer* pointer) override {
     LOG_INFO("frame");
   }
 
-  void notify_pointer_axis_source(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_source(drmpp::input::Pointer* pointer,
                                   uint32_t axis_source) override {
     LOG_INFO("axis_source: {}", axis_source);
   }
 
-  void notify_pointer_axis_stop(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_stop(drmpp::input::Pointer* pointer,
                                 uint32_t time,
                                 uint32_t axis) override {
     LOG_INFO("axis_stop: {}", axis);
   }
 
-  void notify_pointer_axis_discrete(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_discrete(drmpp::input::Pointer* pointer,
                                     uint32_t axis,
                                     int32_t discrete) override {
     LOG_INFO("axis_discrete: axis: {}, discrete: {}", axis, discrete);
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-cursor", "Render Cursor");

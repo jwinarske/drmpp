@@ -1,0 +1,76 @@
+name: clang-tidy
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+
+jobs:
+  tidy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install Packages
+        run: |
+          echo ${{ github.server_url }}
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y update
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y install ninja-build \
+          libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev
+
+          wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          sudo apt install ./libtinfo5_6.3-2ubuntu0.1_amd64.deb
+          rm libtinfo5_6.3-2ubuntu0.1_amd64.deb
+
+          mkdir clang18 && cd clang18
+          curl -L -O https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+          tar -xJf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz --strip-components=1
+          bin/clang-tidy --version
+
+          pip install --user meson pyyaml
+          
+          meson --version
+          gcc --version
+
+      - name: Configure Meson
+        run: |
+          cd ${{github.workspace}}
+          meson setup buildDir --default-library static
+
+      - name: Build
+        run: ninja -C ${{github.workspace}}/buildDir
+
+      - name: clang-tidy
+        working-directory: ${{github.workspace}}
+        run: |
+          clang-tidy --dump-config
+          export FILE_LIST=$(find . -type d \( -name clang18 -o -name subprojects -o -name buildDir \) -prune -false -o -name '*.cc' -o -name '*.hpp' -o -name '*.h')
+          echo $FILE_LIST
+          clang18/bin/run-clang-tidy \
+            -p ${{github.workspace}}/buildDir \
+            -warnings-as-errors='*,-bugprone-macro-parentheses' \
+            -quiet \
+            -export-fixes=tidy-results-suggested-fixes.txt \
+            $FILE_LIST 2> tidy-results-log.txt
+
+      - name: Show results
+        if: always()
+        run: |
+          cat tidy-results-log.txt
+          cat tidy-results-suggested-fixes.txt
+
+      - name: Publish Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-results
+          path: tidy-results-*
