@@ -122,9 +122,9 @@ class App final : public drmpp::input::KeyboardObserver,
   void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
-    if (caps &= SEAT_CAPABILITIES_KEYBOARD) {
-      auto keyboards = seat_->get_keyboards();
-      if (keyboards.has_value()) {
+    if (caps & SEAT_CAPABILITIES_KEYBOARD) {
+      if (const auto keyboards = seat_->get_keyboards();
+          keyboards.has_value()) {
         for (auto const& keyboard : *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
@@ -145,18 +145,18 @@ class App final : public drmpp::input::KeyboardObserver,
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
-      } else if (xdg_key_symbols[0] == XKB_KEY_d) {
+      }
+      if (xdg_key_symbols[0] == XKB_KEY_d) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         if (drmpp::utils::is_cmd_present("libinput")) {
           const std::string cmd = "libinput list-devices";
-          std::string result;
-          if (drmpp::utils::execute(cmd.c_str(), result)) {
+          if (std::string result; drmpp::utils::execute(cmd, result)) {
             LOG_INFO("{}", result);
           }
         }
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
-        auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
+        const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
         for (const auto& node : nodes) {
           std::string node_info =
               drmpp::info::DrmInfo::get_node_info(node.c_str());

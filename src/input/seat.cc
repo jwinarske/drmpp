@@ -231,7 +231,7 @@ namespace drmpp::input {
     return pointer_;
   }
 
-  void Seat::event_mask_print() const {
+  void Seat::event_mask_print() {
     const std::string out;
     std::stringstream ss(out);
     ss << "Seat Event Mask";
