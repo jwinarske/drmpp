@@ -1,6 +1,7 @@
 /*
   FastLZ - Byte-aligned LZ77 compression library
   Copyright (C) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
+  Copyright 2024 drmpp contributors
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +59,10 @@ extern "C" {
   decompressed using the function fastlz_decompress below.
 */
 
-int fastlz_compress_level(int level, const void* input, int length, void* output);
+int fastlz_compress_level(int level,
+                          const void* input,
+                          int length,
+                          void* output);
 
 /**
   Decompress a block of compressed data and returns the size of the

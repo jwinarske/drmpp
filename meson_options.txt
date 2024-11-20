@@ -1,5 +1,5 @@
 option('examples',
-       type: 'boolean',
-       value: true,
-       description: 'build client examples'
+       type : 'boolean',
+       value : true,
+       description : 'build client examples'
 )

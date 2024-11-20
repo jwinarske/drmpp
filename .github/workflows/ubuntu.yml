@@ -31,9 +31,10 @@ jobs:
       - name: Install Packages
         run: |
           echo ${{ github.server_url }}
-          pip install --user meson
-          sudo apt-get -y install ninja-build \
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y update
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y install ninja-build \
           libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev hwdata
+          pip install --user meson
           meson --version
           gcc --version
 

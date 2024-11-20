@@ -42,5 +42,4 @@ extern "C" {
 #include "plane/plane.h"
 #include "utils.h"
 
-
 #endif  // INCLUDE_DRMPP_H_
