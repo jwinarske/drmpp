@@ -82,18 +82,18 @@ class Keyboard {
    * \brief Constructs a Keyboard instance.
    *
    * \param event_mask The event mask to be used.
-   * \param xkbmodel The XKB model.
-   * \param xkblayout The XKB layout.
-   * \param xkbvariant The XKB variant.
-   * \param xkboptions The XKB options.
+   * \param model The XKB model.
+   * \param layout The XKB layout.
+   * \param variant The XKB variant.
+   * \param options The XKB options.
    * \param delay The delay for key repeat (default is 500).
    * \param repeat The repeat rate for key repeat (default is 33).
    */
   explicit Keyboard(event_mask const& event_mask,
-                    const char* xkbmodel,
-                    const char* xkblayout,
-                    const char* xkbvariant,
-                    const char* xkboptions,
+                    const char* model,
+                    const char* layout,
+                    const char* variant,
+                    const char* options,
                     int32_t delay = 500,
                     int32_t repeat = 33);
 

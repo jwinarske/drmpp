@@ -198,7 +198,7 @@ class App final : public drmpp::input::KeyboardObserver,
 
           // Parse EDID
           if (size) {
-            auto info = di_info_parse_edid(raw, size);
+            const auto info = di_info_parse_edid(raw, size);
             if (!info) {
               LOG_ERROR("di_edid_parse failed");
               break;

@@ -7,24 +7,21 @@
 #include <utils.h>
 #include <cstdio>
 #include <ctime>
-//#include <iostream>
 
 #include "drmpp.h"
 
-#include "input/xkeymap_default.h"
-
 namespace drmpp::input {
 Keyboard::Keyboard(event_mask const& event_mask,
-                   const char* xkbmodel,
-                   const char* xkblayout,
-                   const char* xkbvariant,
-                   const char* xkboptions,
+                   const char* model,
+                   const char* layout,
+                   const char* variant,
+                   const char* options,
                    const int32_t delay,
                    const int32_t repeat) {
-  (void)xkbmodel;
-  (void)xkblayout;
-  (void)xkbvariant;
-  (void)xkboptions;
+  (void)model;
+  (void)layout;
+  (void)variant;
+  (void)options;
   event_mask_ = {
       .enabled = event_mask.enabled,
       .all = event_mask.all,
@@ -48,7 +45,7 @@ Keyboard::~Keyboard() {
 }
 
 void Keyboard::register_observer(KeyboardObserver* observer, void* user_data) {
-  std::scoped_lock<std::mutex> lock(observers_mutex_);
+  std::scoped_lock lock(observers_mutex_);
   observers_.push_back(observer);
 
   if (user_data) {
@@ -57,7 +54,7 @@ void Keyboard::register_observer(KeyboardObserver* observer, void* user_data) {
 }
 
 void Keyboard::unregister_observer(KeyboardObserver* observer) {
-  std::scoped_lock<std::mutex> lock(observers_mutex_);
+  std::scoped_lock lock(observers_mutex_);
   observers_.remove(observer);
 }
 
@@ -142,9 +139,9 @@ void Keyboard::handle_keyboard_event(libinput_event_keyboard* key_event) {
   const auto xkb_scancode = key + 8;
   const auto key_repeats = xkb_keymap_key_repeats(xkb_keymap_, xkb_scancode);
 
-  const xkb_keysym_t* key_syms;
+  const xkb_keysym_t* key_symbols;
   const auto xdg_keysym_count =
-      xkb_state_key_get_syms(xkb_state_, xkb_scancode, &key_syms);
+      xkb_state_key_get_syms(xkb_state_, xkb_scancode, &key_symbols);
 
   if (key_repeats) {
     // start/restart timer
@@ -158,13 +155,13 @@ void Keyboard::handle_keyboard_event(libinput_event_keyboard* key_event) {
                       .xkb_scancode = xkb_scancode,
                       .key_repeats = key_repeats,
                       .xdg_keysym_count = xdg_keysym_count,
-                      .key_syms = key_syms};
+                      .key_syms = key_symbols};
   }
 
   if (state == LIBINPUT_KEY_STATE_RELEASED) {
     if (repeat_.notify.xkb_scancode == xkb_scancode) {
       // stop timer
-      itimerspec its{};
+      constexpr itimerspec its{};
       timer_settime(repeat_.timer, 0, &its, nullptr);
     }
   }
@@ -174,16 +171,16 @@ void Keyboard::handle_keyboard_event(libinput_event_keyboard* key_event) {
       "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
       time, xkb_scancode, key_repeats,
       state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-      xdg_keysym_count, key_syms[0]);
+      xdg_keysym_count, key_symbols[0]);
 
   if (event_mask_.enabled && event_mask_.all) {
     return;
   }
 
-  std::scoped_lock<std::mutex> lock(observers_mutex_);
+  std::scoped_lock lock(observers_mutex_);
   for (const auto observer : observers_) {
     observer->notify_keyboard_xkb_v1_key(this, time, xkb_scancode, key_repeats,
-                                         state, xdg_keysym_count, key_syms);
+                                         state, xdg_keysym_count, key_symbols);
   }
 }
 
@@ -196,8 +193,9 @@ void Keyboard::handle_repeat_info(const int32_t delay, const int32_t rate) {
     repeat_.sev.sigev_notify = SIGEV_SIGNAL;
     repeat_.sev.sigev_signo = SIGRTMIN;
     repeat_.sev.sigev_value.sival_ptr = this;
-    auto res = timer_create(CLOCK_REALTIME, &repeat_.sev, &repeat_.timer);
-    if (res != 0) {
+    if (const auto res =
+            timer_create(CLOCK_REALTIME, &repeat_.sev, &repeat_.timer);
+        res != 0) {
       LOG_CRITICAL("Error timer_create: {}", std::strerror(errno));
       abort();
     }
@@ -214,7 +212,7 @@ void Keyboard::handle_repeat_info(const int32_t delay, const int32_t rate) {
 }
 
 void Keyboard::repeat_xkb_v1_key_callback(int /* sig */,
-                                          siginfo_t* si,
+                                          siginfo_t* si,  // NOLINT
                                           void* /* uc */) {
   const auto obj =
       static_cast<Keyboard*>(si->_sifields._rt.si_sigval.sival_ptr);

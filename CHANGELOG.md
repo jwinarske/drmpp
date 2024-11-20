@@ -1,5 +1,9 @@
 # CHANGELOG
 
+Nov 20, 2024
+
+1. Cleanup
+
 Nov 19, 2024
 
 1. Update docs

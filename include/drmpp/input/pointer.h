@@ -297,7 +297,6 @@ class Pointer {
   std::list<PointerObserver*> observers_{}; /**< List of observers */
   std::mutex observers_mutex_{};            /**< Mutex for observers list */
   bool disable_cursor_; /**< Whether the cursor is disabled */
-  int size_;            /**< Size of the pointer */
   void* user_data_{};   /**< User data */
 
   double sx_{}; /**< x-coordinate of the pointer */
