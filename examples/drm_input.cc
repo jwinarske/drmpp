@@ -318,7 +318,7 @@ int main(const int argc, char** argv) {
       .add_options()("help", "Print help");
 
   if (options.parse(argc, argv).count("help")) {
-    spdlog::info("{}", options.help({"", "Group"}));
+    LOG_INFO("{}", options.help({"", "Group"}));
     exit(EXIT_SUCCESS);
   }
 

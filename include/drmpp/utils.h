@@ -1,6 +1,23 @@
+/*
+ * Copyright 2024 drmpp contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef INCLUDE_DRMPP_UTILS_H_
 #define INCLUDE_DRMPP_UTILS_H_
 
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -12,12 +29,13 @@
 #include "drmpp.h"
 
 namespace drmpp::utils {
+
 /**
- * @brief trim from end of string (right)
- * @return std::string&
- * @retval String that has specified characters trimmed from right.
- * @relation
- * flutter
+ * \brief Trims the characters specified in `t` from the end of the string `s`.
+ *
+ * \param s The string to be trimmed.
+ * \param t The characters to be trimmed from the end of the string.
+ * \return The trimmed string.
  */
 inline std::string& rtrim(std::string& s, const char* t) {
   s.erase(s.find_last_not_of(t) + 1);
@@ -25,11 +43,12 @@ inline std::string& rtrim(std::string& s, const char* t) {
 }
 
 /**
- * @brief trim from beginning of string (left)
- * @return std::string&
- * @retval String that has specified characters trimmed from left.
- * @relation
- * flutter
+ * \brief Trims the characters specified in `t` from the beginning of the string
+ * `s`.
+ *
+ * \param s The string to be trimmed.
+ * \param t The characters to be trimmed from the beginning of the string.
+ * \return The trimmed string.
  */
 inline std::string& ltrim(std::string& s, const char* t) {
   s.erase(0, s.find_first_not_of(t));
@@ -37,29 +56,30 @@ inline std::string& ltrim(std::string& s, const char* t) {
 }
 
 /**
- * @brief trim from both ends of string (right then left)
- * @return std::string&
- * @retval String that has specified characters trimmed from right and left.
- * @relation
- * flutter
+ * \brief Trims the characters specified in `t` from both ends of the string
+ * `s`.
+ *
+ * \param s The string to be trimmed.
+ * \param t The characters to be trimmed from both ends of the string.
+ * \return The trimmed string.
  */
 [[maybe_unused]] inline std::string& trim(std::string& s, const char* t) {
   return ltrim(rtrim(s, t), t);
 }
 
 /**
- * @brief Split string by token
- * @return std::vector<std::string>
- * @relation
- * internal
+ * \brief Splits the string `str` by the delimiter `token`.
+ *
+ * \param str The string to be split.
+ * \param token The delimiter used to split the string.
+ * \return A vector of strings obtained by splitting the input string.
  */
 [[maybe_unused]] inline std::vector<std::string> split(
     std::string str,
     const std::string& token) {
   std::vector<std::string> result;
   while (!str.empty()) {
-    const auto index = str.find(token);
-    if (index != std::string::npos) {
+    if (const auto index = str.find(token); index != std::string::npos) {
       result.push_back(str.substr(0, index));
       str = str.substr(index + token.size());
       if (str.empty())
@@ -72,12 +92,26 @@ inline std::string& ltrim(std::string& s, const char* t) {
   return result;
 }
 
+/**
+ * \brief Checks if the character `c` is a safe character.
+ *
+ * Safe characters include alphanumeric characters, space, underscore, hyphen,
+ * slash, and dot.
+ *
+ * \param c The character to be checked.
+ * \return Non-zero if the character is safe, zero otherwise.
+ */
 inline int is_safe_char(const char c) {
-  // Only allow alphanumeric characters and a few safe symbols
   return std::isalnum(static_cast<unsigned char>(c)) || c == ' ' || c == '_' ||
          c == '-' || c == '/' || c == '.';
 }
 
+/**
+ * \brief Sanitizes the command string `cmd` by removing unsafe characters.
+ *
+ * \param cmd The command string to be sanitized.
+ * \return The sanitized command string.
+ */
 inline std::string sanitize_cmd(const std::string& cmd) {
   std::string safe_cmd;
   for (const char c : cmd) {
@@ -88,38 +122,55 @@ inline std::string sanitize_cmd(const std::string& cmd) {
   return safe_cmd;
 }
 
+/**
+ * \brief Executes the command `cmd` and stores the result in `result`.
+ *
+ * \param cmd The command to be executed.
+ * \param result The string to store the result of the command execution.
+ * \return True if the command was executed successfully, false otherwise.
+ */
 inline bool execute(const std::string& cmd, std::string& result) {
-  DLOG_TRACE("execute: cmd: {}", cmd);
   if (cmd.empty()) {
-    spdlog::error("execute: cmd is empty");
+    LOG_ERROR("execute: cmd is empty");
     return false;
   }
   const std::string safe_cmd = sanitize_cmd(cmd);
-  const auto fp = popen(safe_cmd.c_str(), "r");
+  FILE* fp = popen(safe_cmd.c_str(), "r");
   if (!fp) {
-    LOG_ERROR("Failed to execute cmd: {}, ({}) {}", cmd, errno,
+    LOG_ERROR("[ExecuteCommand] Failed to Execute Command: ({}) {}", errno,
               strerror(errno));
+    LOG_ERROR("Failed to Execute Command: {}", cmd);
     return false;
   }
 
-  auto buffer = std::make_unique<char>(1024);
-  while (std::fgets(buffer.get(), 1024, fp)) {
-    result.append(buffer.get());
+  DLOG_TRACE("[Command] Execute: {}", cmd);
+
+  result.clear();
+  auto buf = std::make_unique<char[]>(1024);
+  while (fgets(buf.get(), 1024, fp) != nullptr) {
+    result.append(buf.get());
   }
-  buffer.reset();
-  DLOG_TRACE("execute: result: ({}) {}", result.size(), result);
+  buf.reset();
+
+  DLOG_TRACE("[Command] Execute Result: [{}] {}", result.size(), result);
 
   if (pclose(fp) == -1) {
-    LOG_ERROR("Failed to Close Pipe: ({}) {}", errno, strerror(errno));
+    LOG_ERROR("[ExecuteCommand] Failed to Close Pipe: ({}) {}", errno,
+              strerror(errno));
     return false;
   }
   return true;
 }
 
+/**
+ * \brief Checks if the command `cmd` is present in the system.
+ *
+ * \param cmd The command to be checked.
+ * \return True if the command is present, false otherwise.
+ */
 inline bool is_cmd_present(const char* cmd) {
   const std::string check_cmd = "which " + std::string(cmd);
-  std::string result;
-  if (execute(check_cmd.c_str(), result)) {
+  if (std::string result; execute(check_cmd, result)) {
     if (result.empty()) {
       return false;
     }
@@ -128,6 +179,11 @@ inline bool is_cmd_present(const char* cmd) {
   return false;
 }
 
+/**
+ * \brief Retrieves the udev framebuffer system attributes.
+ *
+ * \return An unordered map containing the udev framebuffer system attributes.
+ */
 inline std::unordered_map<std::string, std::string>
 get_udev_fb_sys_attributes() {
   std::unordered_map<std::string, std::string> results;
@@ -165,8 +221,7 @@ get_udev_fb_sys_attributes() {
     const auto sys_attr_list = udev_device_get_sysattr_list_entry(dev);
     udev_list_entry* sys_attr_list_entry;
     udev_list_entry_foreach(sys_attr_list_entry, sys_attr_list) {
-      const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry);
-      if (sys_attr) {
+      if (const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry)) {
         const auto value = udev_device_get_sysattr_value(dev, sys_attr);
         results[sys_attr] = value ? value : "";
       }
@@ -177,6 +232,12 @@ get_udev_fb_sys_attributes() {
   return results;
 }
 
+/**
+ * \brief Retrieves and logs the udev system attributes for the specified
+ * subsystem.
+ *
+ * \param subsystem The subsystem to retrieve the attributes for.
+ */
 inline void get_udev_sys_attributes(const char* subsystem) {
   const auto udev = udev_new();
   if (!udev) {
@@ -197,15 +258,12 @@ inline void get_udev_sys_attributes(const char* subsystem) {
     const auto dev = udev_device_new_from_syspath(udev, path);
 
     LOG_INFO("* Device Node");
-    const auto devnode = udev_device_get_devnode(dev);
-    if (devnode) {
+    if (const auto devnode = udev_device_get_devnode(dev)) {
       LOG_INFO("devnode: {}", devnode);
     } else {
       const auto parent = udev_device_get_parent(dev);
-      const auto parent_path = udev_device_get_syspath(parent);
-      if (parent_path) {
-        const auto parent_devnode = udev_device_get_devnode(parent);
-        if (parent_devnode) {
+      if (const auto parent_path = udev_device_get_syspath(parent)) {
+        if (const auto parent_devnode = udev_device_get_devnode(parent)) {
           LOG_INFO("parent: {}", parent_devnode);
         } else {
           LOG_INFO("parent: {}", parent_path);
@@ -228,8 +286,7 @@ inline void get_udev_sys_attributes(const char* subsystem) {
     const auto sys_attr_list = udev_device_get_sysattr_list_entry(dev);
     udev_list_entry* sys_attr_list_entry;
     udev_list_entry_foreach(sys_attr_list_entry, sys_attr_list) {
-      const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry);
-      if (sys_attr) {
+      if (const auto sys_attr = udev_list_entry_get_name(sys_attr_list_entry)) {
         const auto value = udev_device_get_sysattr_value(dev, sys_attr);
         LOG_INFO("sys_attr: {}: {}", sys_attr, value ? value : "");
       }
@@ -241,6 +298,12 @@ inline void get_udev_sys_attributes(const char* subsystem) {
   udev_unref(udev);
 }
 
+/**
+ * \brief Retrieves the enabled DRM nodes.
+ *
+ * \param connected If true, only connected nodes are retrieved.
+ * \return A vector of strings containing the enabled DRM nodes.
+ */
 inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
   std::vector<std::string> result;
 
@@ -267,8 +330,6 @@ inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
         if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"),
                                 "connected") == 0) {
           result.emplace_back(parent_node);
-        } else {
-          result.emplace_back(parent_node);
         }
       }
     }
@@ -280,6 +341,12 @@ inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
   return result;
 }
 
+/**
+ * \brief Retrieves the enabled DRM output nodes.
+ *
+ * \param connected If true, only connected nodes are retrieved.
+ * \return A vector of strings containing the enabled DRM output nodes.
+ */
 inline std::vector<std::string> get_enabled_drm_output_nodes(
     const bool connected) {
   std::vector<std::string> result;
@@ -306,8 +373,6 @@ inline std::vector<std::string> get_enabled_drm_output_nodes(
         if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"),
                                 "connected") == 0) {
           result.emplace_back(path);
-        } else {
-          result.emplace_back(path);
         }
       }
     }
@@ -319,10 +384,21 @@ inline std::vector<std::string> get_enabled_drm_output_nodes(
   return result;
 }
 
+/**
+ * \brief Saves the current I/O stream flags and restores them upon destruction.
+ */
 class IosFlagSaver {
  public:
+  /**
+   * \brief Constructs an IosFlagSaver and saves the current I/O stream flags.
+   *
+   * \param _ios The I/O stream to save the flags from.
+   */
   explicit IosFlagSaver(std::ostream& _ios) : ios(_ios), f(_ios.flags()) {}
 
+  /**
+   * \brief Restores the saved I/O stream flags.
+   */
   ~IosFlagSaver() { ios.flags(f); }
 
   IosFlagSaver(const IosFlagSaver& rhs) = delete;
@@ -334,15 +410,29 @@ class IosFlagSaver {
   std::ios::fmtflags f;
 };
 
+/**
+ * \brief Struct for custom hex header dump.
+ *
+ * \tparam RowSize The size of each row in the hex dump.
+ */
 template <unsigned RowSize>
 struct CustomHexHeaderdump {
-  CustomHexHeaderdump(const uint8_t* data, size_t length)
+  CustomHexHeaderdump(const uint8_t* data, const size_t length)
       : mData(data), mLength(length) {}
 
   const uint8_t* mData;
   const size_t mLength;
 };
 
+/**
+ * \brief Overloads the output stream operator to print a custom hex header
+ * dump.
+ *
+ * \tparam RowSize The size of each row in the hex dump.
+ * \param out The output stream.
+ * \param dump The custom hex header dump to be printed.
+ * \return The output stream.
+ */
 template <unsigned RowSize>
 std::ostream& operator<<(std::ostream& out,
 
@@ -370,14 +460,21 @@ std::ostream& operator<<(std::ostream& out,
   return out;
 }
 
+/**
+ * \brief Decompresses the input data and stores the result in the output
+ * buffer.
+ *
+ * \param input The input data to be decompressed.
+ * \param length The length of the input data.
+ * \param output The buffer to store the decompressed data.
+ */
 inline void asset_decompress(const uint8_t* input,
                              const int length,
                              uint8_t* output) {
   int src = 0;
   int dest = 0;
   while (src < length) {
-    int type = input[src] >> 5;
-    if (type == 0) {
+    if (int type = input[src] >> 5; type == 0) {
       // literal run
       int run = 1 + input[src];
       src = src + 1;
