@@ -18,7 +18,6 @@
 #define INCLUDE_DRMPP_KMS_INFO_INFO_H_
 
 #include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
 #include <xf86drmMode.h>
 
 namespace drmpp::info {

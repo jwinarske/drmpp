@@ -83,7 +83,7 @@ class Common {
    * \param height Height of the framebuffer.
    * \return True if initialization was successful, false otherwise.
    */
-  static bool dumb_fb_init(Common::dumb_fb* fb,
+  static bool dumb_fb_init(dumb_fb* fb,
                            int drm_fd,
                            uint32_t format,
                            uint32_t width,
@@ -96,7 +96,7 @@ class Common {
    * \param drm_fd File descriptor for the DRM device.
    * \return Pointer to the mapped memory.
    */
-  static void* dumb_fb_map(Common::dumb_fb const* fb, int drm_fd);
+  static void* dumb_fb_map(dumb_fb const* fb, int drm_fd);
 
   /**
    * \brief Fills a dumb framebuffer with a specified color.
@@ -105,9 +105,7 @@ class Common {
    * \param drm_fd File descriptor for the DRM device.
    * \param color Color to fill the framebuffer with.
    */
-  static void dumb_fb_fill(Common::dumb_fb const* fb,
-                           int drm_fd,
-                           uint32_t color);
+  static void dumb_fb_fill(dumb_fb const* fb, int drm_fd, uint32_t color);
 };
 
 }  // namespace drmpp::plane

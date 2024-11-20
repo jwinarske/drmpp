@@ -74,8 +74,7 @@ class App final {
       // non-blocking
       ret = select(fd + 1, &fds, nullptr, nullptr, &tv);
       if (ret > 0 && FD_ISSET(fd, &fds)) {
-        auto dev = udev_monitor_receive_device(mon);
-        if (dev) {
+        if (auto dev = udev_monitor_receive_device(mon)) {
           auto node = udev_device_get_devnode(dev);
           auto subsystem = udev_device_get_subsystem(dev);
           auto devtype = udev_device_get_devtype(dev);
@@ -117,7 +116,7 @@ int main(const int argc, char** argv) {
       .add_options()("help", "Print help");
 
   if (options.parse(argc, argv).count("help")) {
-    spdlog::info("{}", options.help({"", "Group"}));
+    LOG_INFO("{}", options.help({"", "Group"}));
     exit(EXIT_SUCCESS);
   }
 
