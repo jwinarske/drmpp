@@ -77,7 +77,6 @@ class App {
 
   static bool is_valid_file_path(const std::filesystem::path& path) {
     if (path.empty() || !exists(path)) {
-      LOG_ERROR("invalid path: {}", path.c_str());
       return false;
     }
     return true;
@@ -121,6 +120,9 @@ class App {
   static bool get_asset_header(const std::string& asset) {
     LOG_INFO("** {} **", asset.c_str());
     const auto buff = read_binary_file(asset);
+    if (buff.empty()) {
+      return false;
+    }
 
     std::stringstream ss;
     const auto buffer_size =
@@ -147,8 +149,10 @@ class App {
   }
 
   [[nodiscard]] bool run() {
-    get_asset_header(config_.keymap_path);
-    get_asset_header(config_.left_ptr_cursor_path);
+    if (!get_asset_header(config_.keymap_path))
+      return false;
+    if (!get_asset_header(config_.left_ptr_cursor_path))
+      return false;
     return false;
   }
 
