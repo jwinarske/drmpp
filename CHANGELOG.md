@@ -3,6 +3,8 @@
 Nov 20, 2024
 
 1. Cleanup
+2. libliftoff drm branch
+3. [drm-lz] Fix segfault when filepath does not exist
 
 Nov 19, 2024
 
