@@ -17,6 +17,7 @@
 #ifndef INCLUDE_DRMPP_INPUT_POINTER_H_
 #define INCLUDE_DRMPP_INPUT_POINTER_H_
 
+#include <cursor/xcursor.h>
 #include <list>
 #include <mutex>
 #include <optional>
@@ -298,6 +299,8 @@ class Pointer {
   std::mutex observers_mutex_{};            /**< Mutex for observers list */
   bool disable_cursor_; /**< Whether the cursor is disabled */
   void* user_data_{};   /**< User data */
+
+  std::unique_ptr<XCursor::Images> cursor_;
 
   double sx_{}; /**< x-coordinate of the pointer */
   double sy_{}; /**< y-coordinate of the pointer */

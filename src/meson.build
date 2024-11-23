@@ -33,6 +33,7 @@ incdirs = [
 ]
 
 drmpp_sources = [
+    'cursor/xcursor.cc',
     'input/seat.cc',
     'input/keyboard.cc',
     'input/pointer.cc',

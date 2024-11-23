@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-#include <input/xkeymap_default.h>
+#include <input/default_xkeymap.h>
 #include <utils.h>
 #include <cstdio>
 #include <ctime>
@@ -63,14 +63,11 @@ void Keyboard::load_default_keymap() {
     xkb_keymap_unref(xkb_keymap_);
   }
 
-  auto* buffer = static_cast<char*>(calloc(1, kXkeymap_uncompressed_length));
-  utils::asset_decompress(kXkeymap, std::size(kXkeymap),
-                          reinterpret_cast<uint8_t*>(buffer));
-
+  auto buffer = utils::decompress_asset(kXkeymap);
   xkb_keymap_ = xkb_keymap_new_from_buffer(
-      xkb_context_, buffer, std::strlen(buffer), XKB_KEYMAP_FORMAT_TEXT_V1,
-      XKB_KEYMAP_COMPILE_NO_FLAGS);
-  free(buffer);
+      xkb_context_, reinterpret_cast<const char*>(buffer.data()), buffer.size(),
+      XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+  buffer.clear();
   assert(xkb_keymap_);
   xkb_state_unref(xkb_state_);
   xkb_state_ = xkb_state_new(xkb_keymap_);

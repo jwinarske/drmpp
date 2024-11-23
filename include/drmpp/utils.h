@@ -28,6 +28,8 @@
 
 #include "drmpp.h"
 
+#include <input/asset.h>
+
 namespace drmpp::utils {
 
 /**
@@ -461,20 +463,30 @@ std::ostream& operator<<(std::ostream& out,
 }
 
 /**
- * \brief Decompresses the input data and stores the result in the output
- * buffer.
+ * \brief Decompresses an asset using a custom decompression algorithm.
  *
- * \param input The input data to be decompressed.
- * \param length The length of the input data.
- * \param output The buffer to store the decompressed data.
+ * This function takes a compressed asset represented as a pair of size and a
+ * vector of bytes, and decompresses it into a unique pointer to an array of
+ * bytes. The decompression algorithm handles literal runs, short matches, and
+ * long matches based on the input data.
+ *
+ * \param asset A pair containing the size of the decompressed asset and a
+ * vector of bytes representing the compressed asset.
+ * \return A unique pointer to an array of bytes containing the decompressed
+ * asset.
  */
-inline void asset_decompress(const uint8_t* input,
-                             const int length,
-                             uint8_t* output) {
+inline std::vector<uint8_t> decompress_asset(const Asset& asset) {
   int src = 0;
   int dest = 0;
+
+  const uint8_t* input = asset.data;
+  const int length = asset.compressed_size;
+  std::vector<uint8_t> buffer(asset.uncompressed_size, 0);
+
+  uint8_t* output = buffer.data();
+
   while (src < length) {
-    if (int type = input[src] >> 5; type == 0) {
+    if (const int type = input[src] >> 5; type == 0) {
       // literal run
       int run = 1 + input[src];
       src = src + 1;
@@ -510,6 +522,10 @@ inline void asset_decompress(const uint8_t* input,
       }
     }
   }
+  assert(static_cast<int>(asset.uncompressed_size) == dest);
+  LOG_INFO("asset compressed: {}, decompressed: {}", asset.compressed_size,
+           dest);
+  return buffer;
 }
 }  // namespace drmpp::utils
 #endif  // INCLUDE_DRMPP_UTILS_H_
