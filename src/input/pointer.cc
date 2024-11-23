@@ -5,7 +5,7 @@
 
 #include "drmpp.h"
 
-#include "input/left_ptr_default.h"
+#include "input/default_left_ptr.h"
 
 namespace drmpp::input {
 /**
@@ -32,17 +32,32 @@ Pointer::Pointer(const bool disable_cursor,
   event_mask_.motion = event_mask.motion;
 
   if (!disable_cursor) {
-    auto* buffer =
-        static_cast<char*>(calloc(1, kCursor_LeftPtr_uncompressed_length));
-    utils::asset_decompress(kCursor_LeftPtr, std::size(kCursor_LeftPtr),
-                            reinterpret_cast<uint8_t*>(buffer));
-    free(buffer);
+    auto buffer = utils::decompress_asset(CursorLeftPtr);
+    cursor_ = XCursor::load_images(buffer);
+    buffer.clear();
+#ifndef NDEBUG
+    if (cursor_) {
+      for (const auto& image : cursor_->images) {
+        DLOG_INFO(
+            "Default Cursor Loaded\n\twidth: {}\n\theight: {}\n\txhot: "
+            "{}\n\tyhot: {}\n\tdelay: {}",
+            image->width, image->height, image->xhot, image->yhot,
+            image->delay);
+      }
+    }
+#endif
   }
 }
 
-Pointer::~Pointer() = default;
+Pointer::~Pointer() {
+  if (cursor_) {
+    for (auto& image : cursor_->images) {
+      image.reset();
+    }
+  }
+}
 
-void Pointer::set_cursor(uint32_t serial,
+void Pointer::set_cursor(const uint32_t serial,
                          const char* cursor_name,
                          const char* theme_name) const {
   (void)serial;

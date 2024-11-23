@@ -21,27 +21,27 @@
  * \brief Class representing a touch input device.
  */
 class Touch {
-public:
- /**
-  * \brief Default constructor for the Touch class.
-  */
- Touch() = default;
+ public:
+  /**
+   * \brief Default constructor for the Touch class.
+   */
+  Touch() = default;
 
- /**
-  * \brief Destructor for the Touch class.
-  */
- ~Touch() = default;
+  /**
+   * \brief Destructor for the Touch class.
+   */
+  ~Touch() = default;
 
- // Disallow copy and assign.
- /**
-  * \brief Deleted copy constructor to prevent copying.
-  */
- Touch(const Touch&) = delete;
+  // Disallow copy and assign.
+  /**
+   * \brief Deleted copy constructor to prevent copying.
+   */
+  Touch(const Touch&) = delete;
 
- /**
-  * \brief Deleted copy assignment operator to prevent copying.
-  */
- Touch& operator=(const Touch&) = delete;
+  /**
+   * \brief Deleted copy assignment operator to prevent copying.
+   */
+  Touch& operator=(const Touch&) = delete;
 };
 
 #endif  // INCLUDE_DRMPP_INPUT_TOUCH_H_

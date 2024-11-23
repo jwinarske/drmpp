@@ -14,33 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef INCLUDE_DRMPP_H_
-#define INCLUDE_DRMPP_H_
+#ifndef INCLUDE_DRMPP_INPUT_ASSET_H
+#define INCLUDE_DRMPP_INPUT_ASSET_H
 
-#include <drm_fourcc.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <xf86drm.h>
-#include <xf86drmMode.h>
-#include <cstdio>
-#include <cstring>
+#include <cstdint>
 
-#include "config.h"
+struct Asset {
+  size_t compressed_size;
+  size_t uncompressed_size;
+  uint8_t data[];
+};
 
-extern "C" {
-#include <libdisplay-info/info.h>
-#include <libinput.h>
-#include <libliftoff.h>
-}
-
-#include "cursor/xcursor.h"
-#include "info/info.h"
-#include "input/keyboard.h"
-#include "input/pointer.h"
-#include "input/seat.h"
-#include "input/touch.h"
-#include "logging/logging.h"
-#include "plane/plane.h"
-#include "utils.h"
-
-#endif  // INCLUDE_DRMPP_H_
+#endif  // INCLUDE_DRMPP_INPUT_ASSET_H
