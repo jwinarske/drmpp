@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef SRC_LOGGING_LOGGING_H_
-#define SRC_LOGGING_LOGGING_H_
+#ifndef INCLUDE_DRMPP_LOGGING_LOGGING_H
+#define INCLUDE_DRMPP_LOGGING_LOGGING_H
+
+#include "config.h"
 
 #if BUILD_DRMPP_STANDALONE
 
@@ -85,4 +87,4 @@ class Logging {
 
 #endif
 
-#endif  // SRC_LOGGING_LOGGING_H_
+#endif  // INCLUDE_DRMPP_LOGGING_LOGGING_H
