@@ -22,6 +22,8 @@
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
+#include "shared_libs/libdrm.h"
+#include "shared_libs/libgbm.h"
 
 struct Configuration {};
 
@@ -52,6 +54,13 @@ class App final : public drmpp::input::KeyboardObserver,
       : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
+
+    if (!LibDrm::IsPresent()) {
+      LOG_ERROR("libdrm.so not found");
+    }
+    if (!LibGbm::IsPresent()) {
+      LOG_ERROR("libgbm.so not found");
+    }
   }
 
   ~App() override { seat_.reset(); }
@@ -87,13 +96,13 @@ class App final : public drmpp::input::KeyboardObserver,
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape ||
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
       }
       if (xdg_key_symbols[0] == XKB_KEY_d) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
       }
     }
     LOG_INFO(

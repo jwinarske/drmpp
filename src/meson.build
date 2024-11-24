@@ -7,12 +7,15 @@ di_dep = di_proj.get_variable('di_dep')
 liftoff_proj = subproject('libliftoff')
 liftoff_dep = liftoff_proj.get_variable('liftoff')
 
-drm_dep = dependency('libdrm', include_type : 'system', required : true)
+gbm_dep = declare_dependency(include_directories : include_directories('../third_party/gbm/include'))
+drm_dep = declare_dependency(include_directories : include_directories('../third_party/drm/include'))
+
 input_dep = dependency('libinput', include_type : 'system', required : true)
 udev_dep = dependency('libudev', include_type : 'system', required : true)
 xkbcommon_dep = dependency('xkbcommon', include_type : 'system', required : true)
 
-runtime = cpp.find_library('rt', required : false)
+runtime = cpp.find_library('rt', required : true)
+dl = cpp.find_library('dl', required : true)
 
 rapidjson_dep = declare_dependency(include_directories : include_directories('../subprojects/rapidjson/include'))
 
@@ -41,6 +44,8 @@ drmpp_sources = [
     'input/fastlz.cc',
     'info/info.cc',
     'plane/plane.cc',
+    'drm/libdrm.cc',
+    'gbm/libgbm.cc',
 ]
 
 drmpp_lib = library('drmpp',
@@ -53,10 +58,12 @@ drmpp_lib = library('drmpp',
                         liftoff_dep,
                         rapidjson_dep,
                         spdlog_dep,
+                        gbm_dep,
                         drm_dep,
                         udev_dep,
                         xkbcommon_dep,
                         runtime,
+                        dl,
                     ],
                     install : true)
 
@@ -68,6 +75,7 @@ drmp_dep = declare_dependency(link_with : drmpp_lib,
                                   liftoff_dep,
                                   rapidjson_dep,
                                   spdlog_dep,
+                                  gbm_dep,
                                   drm_dep,
                                   udev_dep,
                                   xkbcommon_dep,
