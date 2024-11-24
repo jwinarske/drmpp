@@ -43,6 +43,11 @@ jobs:
           cd ${{github.workspace}}
           meson setup buildDir --default-library static
 
+      - name: clang-format-check
+        run: |
+          cd ${{github.workspace}}
+          ninja -C buildDir clang-format-check
+
       - name: Build
         # Build your program with the given configuration
         run: ninja -C ${{github.workspace}}/buildDir

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: (C) 2024 The drmpp Contributors
+# SPDX-FileCopyrightText: (c) 2024 The drmpp Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 di_proj = subproject('libdisplay-info')

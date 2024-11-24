@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: (C) 2024 The drmpp Contributors
+# SPDX-FileCopyrightText: (c) 2024 The drmpp Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 project('drmpp', ['c', 'cpp'],
@@ -45,10 +45,7 @@ pkglibdir = join_paths(libdir, pkgname)
 #########################
 cpp = meson.get_compiler('cpp')
 add_project_arguments(
-    cpp.get_supported_arguments([
-                                    #                                    '-Wno-unused-parameter',
-                                    #                                    '-Wno-missing-field-initializers',
-                                ]),
+    cpp.get_supported_arguments(['-Wno-unused-parameter', '-Wno-missing-field-initializers', ]),
     language : ['cpp'],
 )
 

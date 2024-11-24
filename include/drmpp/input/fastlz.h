@@ -1,6 +1,6 @@
 /*
   FastLZ - Byte-aligned LZ77 compression library
-  Copyright 2024 drmpp contributors
+  Copyright (c) 2024 The drmpp Contributors
   Copyright (C) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
