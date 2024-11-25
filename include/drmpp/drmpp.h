@@ -17,11 +17,8 @@
 #ifndef INCLUDE_DRMPP_H_
 #define INCLUDE_DRMPP_H_
 
-#include <drm_fourcc.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <xf86drm.h>
-#include <xf86drmMode.h>
 #include <cstdio>
 #include <cstring>
 

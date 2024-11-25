@@ -17,8 +17,7 @@
 #ifndef INCLUDE_DRMPP_SHARED_LIBS_LIBDRM_H
 #define INCLUDE_DRMPP_SHARED_LIBS_LIBDRM_H
 
-#include "third_party/drm/include/xf86drm.h"
-#include "third_party/drm/include/xf86drmMode.h"
+#include <xf86drmMode.h>
 
 struct LibDrmExports {
   LibDrmExports() = default;
@@ -94,8 +93,20 @@ struct LibDrmExports {
   typedef drmModePlanePtr (*DrmModeGetPlane)(int fd, uint32_t plane_id);
   typedef void (*DrmModeFreePlane)(drmModePlanePtr ptr);
   typedef int (*DrmModeRmFB)(int fd, uint32_t bufferId);
+  typedef int (*DrmModeAddFB)(int fd,
+                              uint32_t width,
+                              uint32_t height,
+                              uint8_t depth,
+                              uint8_t bpp,
+                              uint32_t pitch,
+                              uint32_t bo_handle,
+                              uint32_t* buf_id);
+
+  typedef int (*DrmSetClientCap)(int fd, uint64_t capability, uint64_t value);
 
   DrmIoctl drm_ioctl = nullptr;
+  DrmSetClientCap set_client_cap = nullptr;
+
   DrmModeGetConnector mode_get_connector = nullptr;
   DrmModeFreeConnector mode_free_connector = nullptr;
   DrmModeGetEncoder mode_get_encoder = nullptr;
@@ -104,6 +115,7 @@ struct LibDrmExports {
   DrmModeSetCrtc mode_set_crtc = nullptr;
   DrmModeFreeCrtc mode_free_crtc = nullptr;
   DrmModeGetFB2 mode_get_fb2 = nullptr;
+  DrmModeAddFB mode_add_fb = nullptr;
   DrmModeAddFB2 mode_add_fb2 = nullptr;
   DrmModeAddFB2WithModifiers mode_add_fb2_with_modifiers = nullptr;
   DrmModeFreeFB2 mode_free_fb2 = nullptr;

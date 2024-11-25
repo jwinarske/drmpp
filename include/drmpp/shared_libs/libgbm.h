@@ -17,7 +17,7 @@
 #ifndef INCLUDE_DRMPP_SHARED_LIBS_LIBGBM_H
 #define INCLUDE_DRMPP_SHARED_LIBS_LIBGBM_H
 
-#include "third_party/gbm/include/gbm.h"
+#include <gbm.h>
 
 struct LibGbmExports {
   LibGbmExports() = default;
@@ -53,6 +53,20 @@ struct LibGbmExports {
   typedef uint32_t (*BoGetHeightFnPtr)(gbm_bo* bo);
   typedef uint32_t (*BoGetFormatFnPtr)(gbm_bo* bo);
   typedef uint64_t (*BoGetModifierFnPtr)(gbm_bo* bo);
+  typedef uint32_t (*BoGetStride)(gbm_bo* bo);
+
+  typedef gbm_bo_handle (*BoGetHandle)(gbm_bo* bo);
+  typedef gbm_bo* (*SurfaceLockFrontBuffer)(gbm_surface* surface);
+  typedef void (*SurfaceReleaseBuffer)(gbm_surface* surface, gbm_bo* bo);
+
+  typedef gbm_device* (*CreateDevice)(int fd);
+  typedef void (*DeviceDestroy)(gbm_device* gbm);
+  typedef gbm_surface* (*SurfaceCreate)(gbm_device* gbm,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t format,
+                                        uint32_t flags);
+  typedef void (*SurfaceDestroy)(gbm_surface* surface);
 
   BoCreateFnPtr bo_create = nullptr;
   BoDestroyFnPtr bo_destroy = nullptr;
@@ -67,6 +81,15 @@ struct LibGbmExports {
   BoGetHeightFnPtr bo_get_height = nullptr;
   BoGetFormatFnPtr bo_get_format = nullptr;
   BoGetModifierFnPtr bo_get_modifier = nullptr;
+  BoGetStride bo_get_stride = nullptr;
+  BoGetHandle bo_get_handle = nullptr;
+
+  CreateDevice create_device = nullptr;
+  DeviceDestroy device_destroy = nullptr;
+  SurfaceCreate surface_create = nullptr;
+  SurfaceDestroy surface_destroy = nullptr;
+  SurfaceLockFrontBuffer surface_lock_front_buffer = nullptr;
+  SurfaceReleaseBuffer surface_release_buffer = nullptr;
 };
 
 class LibGbm {

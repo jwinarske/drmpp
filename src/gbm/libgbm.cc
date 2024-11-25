@@ -37,6 +37,17 @@ LibGbmExports::LibGbmExports(void* lib) {
     GetFuncAddress(lib, "gbm_bo_get_height", &bo_get_height);
     GetFuncAddress(lib, "gbm_bo_get_format", &bo_get_format);
     GetFuncAddress(lib, "gbm_bo_get_modifier", &bo_get_modifier);
+    GetFuncAddress(lib, "gbm_bo_get_stride", &bo_get_stride);
+    GetFuncAddress(lib, "gbm_bo_get_handle", &bo_get_handle);
+
+    GetFuncAddress(lib, "gbm_create_device", &create_device);
+    GetFuncAddress(lib, "gbm_device_destroy", &device_destroy);
+
+    GetFuncAddress(lib, "gbm_surface_create", &surface_create);
+    GetFuncAddress(lib, "gbm_surface_destroy", &surface_destroy);
+    GetFuncAddress(lib, "gbm_surface_lock_front_buffer",
+                   &surface_lock_front_buffer);
+    GetFuncAddress(lib, "gbm_surface_release_buffer", &surface_release_buffer);
   }
 }
 
