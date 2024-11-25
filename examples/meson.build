@@ -97,7 +97,20 @@ executable('drm-lz', ['drm_lz.cc'],
 
 executable('drm-gbm', ['drm_gbm.cc'],
            include_directories : incdirs,
-           cpp_args : ['-D__GBM__ -DEGL_NO_X11'],
+           cpp_args : ['-DEGL_NO_X11'],
+           dependencies : [
+               cxxopts_dep,
+               egl_dep,
+               opengl_dep,
+               drmp_dep,
+               gbm_dep,
+           ],
+           install : false,
+)
+
+executable('drm-snake', ['drm_snake.cc', 'snake/snake.cc'],
+           include_directories : incdirs,
+           cpp_args : ['-DEGL_NO_X11'],
            dependencies : [
                cxxopts_dep,
                egl_dep,
