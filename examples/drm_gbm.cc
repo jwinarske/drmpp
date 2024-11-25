@@ -29,17 +29,11 @@
 #include "drmpp.h"
 
 struct Configuration {
-  std::string device;
+  std::string device = "/dev/dri/card0";
+  size_t mode_index = 0;
 };
 
 static volatile bool gRunning = true;
-
-typedef void (*GlClearColor)(GLclampf red,
-                             GLclampf green,
-                             GLclampf blue,
-                             GLclampf alpha);
-
-typedef void (*GlClear)(GLbitfield mask);
 
 /**
  * @brief Signal handler function to handle signals.
@@ -59,15 +53,12 @@ void handle_signal(const int signal) {
 }
 
 class App final {
-public:
-  explicit App(const Configuration &config)
-    : logging_(std::make_unique<Logging>()) {
-    glClearColorFnptr_ =
-        reinterpret_cast<GlClearColor>(egl->GetProcAddress("glClearColor"));
-    assert(glClearColorFnptr_);
-    glClearFnptr_ = reinterpret_cast<GlClear>(egl->GetProcAddress("glClear"));
-    assert(glClearFnptr_);
+ public:
+  explicit App(const Configuration& config)
+      : logging_(std::make_unique<Logging>()) {
     device_ = config.device;
+    mode_index_ = config.mode_index;
+    LOG_INFO("Device: {}", device_);
   }
 
   ~App() = default;
@@ -82,13 +73,17 @@ public:
     const auto connector = find_connector(fd_, resources);
     assert(connector != nullptr);
 
-    printf("Mode list:\n------------------\n");
+    LOG_INFO("Mode list");
+    LOG_INFO("------------------");
     for (int i = 0; i < connector->count_modes; i++) {
-      printf("Mode %d: %s\n", i, connector->modes[i].name);
+      LOG_INFO("Mode {}: {} @ {}", i, connector->modes[i].name,
+               connector->modes[i].vrefresh);
     }
+    LOG_INFO("Using Mode: {} @ {}", connector->modes[mode_index_].name,
+             connector->modes[mode_index_].vrefresh);
 
     drm_.connector_id = connector->connector_id;
-    drm_.mode_info = connector->modes[0];
+    drm_.mode_info = connector->modes[mode_index_];
 
     const auto encoder = find_encoder(fd_, connector);
     assert(encoder != nullptr);
@@ -104,8 +99,8 @@ public:
     assert(gbm_.device != nullptr);
 
     gbm_.surface = gbm->surface_create(
-      gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
-      GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+        gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
+        GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
     assert(gbm_.surface != nullptr);
 
     static EGLint attributes[] = {
@@ -117,40 +112,40 @@ public:
       EGL_ALPHA_SIZE, 0,
       EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
       EGL_NONE
-      // clang-format on
+        // clang-format on
     };
 
     static constexpr EGLint context_attribs[] = {
         // clang-format off
       EGL_CONTEXT_CLIENT_VERSION, 2,
       EGL_NONE
-      // clang-format on
+        // clang-format on
     };
 
-    const auto display = egl->GetDisplay(gbm_.device);
+    egl_.display = egl->GetDisplay(gbm_.device);
 
-    egl->Initialize(display, nullptr, nullptr);
+    egl->Initialize(egl_.display, nullptr, nullptr);
     egl->BindAPI(EGL_OPENGL_API);
 
     EGLint count = 0;
-    egl->GetConfigs(display, nullptr, 0, &count);
+    egl->GetConfigs(egl_.display, nullptr, 0, &count);
     const auto configs =
-        static_cast<EGLConfig *>(malloc(count * sizeof(EGLConfig)));
+        static_cast<EGLConfig*>(malloc(count * sizeof(EGLConfig)));
     EGLint num_config{};
-    egl->ChooseConfig(display, attributes, configs, count, &num_config);
+    egl->ChooseConfig(egl_.display, attributes, configs, count, &num_config);
 
     const int config_index = match_config_to_visual(
-      display, GBM_FORMAT_XRGB8888, configs, num_config);
+        egl_.display, GBM_FORMAT_XRGB8888, configs, num_config);
 
-    egl_.context = egl->CreateContext(display, configs[config_index],
+    egl_.context = egl->CreateContext(egl_.display, configs[config_index],
                                       EGL_NO_CONTEXT, context_attribs);
 
     egl_.surface = egl->CreateWindowSurface(
-      display, configs[config_index],
-      reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
+        egl_.display, configs[config_index],
+        reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
     free(configs);
 
-    egl->MakeCurrent(display, egl_.surface, egl_.surface, egl_.context);
+    egl->MakeCurrent(egl_.display, egl_.surface, egl_.surface, egl_.context);
 
     for (auto i = 0; i < 600; i++)
       draw(static_cast<float>(i) / 600.0f);
@@ -165,10 +160,10 @@ public:
       gbm->surface_release_buffer(gbm_.surface, gbm_.previous_bo);
     }
 
-    egl->DestroySurface(display, egl_.surface);
+    egl->DestroySurface(egl_.display, egl_.surface);
     gbm->surface_destroy(gbm_.surface);
-    egl->DestroyContext(display, egl_.context);
-    egl->Terminate(display);
+    egl->DestroyContext(egl_.display, egl_.context);
+    egl->Terminate(egl_.display);
     gbm->device_destroy(gbm_.device);
 
     close(fd_);
@@ -176,18 +171,16 @@ public:
     return false;
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
 
-  GlClearColor glClearColorFnptr_ = nullptr;
-  GlClear glClearFnptr_ = nullptr;
-
   std::string device_;
+  size_t mode_index_;
   int fd_{};
 
   struct {
     drmModeModeInfo mode_info;
-    drmModeCrtc *crtc;
+    drmModeCrtc* crtc;
     uint32_t connector_id;
     uint32_t fb;
     uint32_t previous_fb;
@@ -200,27 +193,27 @@ private:
   } egl_{};
 
   struct {
-    gbm_device *device;
-    gbm_surface *surface;
-    gbm_bo *bo;
-    gbm_bo *previous_bo;
+    gbm_device* device;
+    gbm_surface* surface;
+    gbm_bo* bo;
+    gbm_bo* previous_bo;
   } gbm_{};
 
-  static drmModeConnector *find_connector(const int fd,
-                                          const drmModeRes *resources) {
+  static drmModeConnector* find_connector(const int fd,
+                                          const drmModeRes* resources) {
     for (auto i = 0; i < resources->count_connectors; i++) {
-      drmModeConnector *connector =
+      drmModeConnector* connector =
           drm->ModeGetConnector(fd, resources->connectors[i]);
       if (connector->connection == DRM_MODE_CONNECTED) {
         return connector;
       }
       drm->ModeFreeConnector(connector);
     }
-    return nullptr; // if no connector found
+    return nullptr;  // if no connector found
   }
 
-  static drmModeEncoder *find_encoder(const int fd,
-                                      const drmModeConnector *connector) {
+  static drmModeEncoder* find_encoder(const int fd,
+                                      const drmModeConnector* connector) {
     return drm->ModeGetEncoder(fd, connector->encoder_id);
   }
 
@@ -242,14 +235,14 @@ private:
   }
 
   void draw(const float progress) {
-    glClearColorFnptr_(1.0f - progress, progress, 0.0, 1.0);
-    glClearFnptr_(GL_COLOR_BUFFER_BIT);
+    glClearColor(1.0f - progress, progress, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
     swap_buffers();
   }
 
   static int match_config_to_visual(EGLDisplay egl_display,
-                                    const EGLint &visual_id,
-                                    const EGLConfig *configs,
+                                    const EGLint& visual_id,
+                                    const EGLConfig* configs,
                                     const int count) {
     EGLint id;
     for (auto i = 0; i < count; ++i) {
@@ -265,7 +258,7 @@ private:
   }
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   Configuration config;
@@ -276,8 +269,14 @@ int main(const int argc, char **argv) {
       .add_options()
       // clang-format off
       ("help", "Print help")
-      ("d,device", "Path to device", cxxopts::value<std::string>(config.device));
+      ("d,device", "Path to device", cxxopts::value<std::string>(config.device))
+      ("m,mode", "Mode index", cxxopts::value<size_t>(config.mode_index));
   // clang-format on
+
+  if (options.parse(argc, argv).count("help")) {
+    LOG_INFO("{}", options.help({"", "Group"}));
+    exit(EXIT_SUCCESS);
+  }
 
   std::filesystem::path device_path(config.device);
   if (!std::filesystem::exists(config.device)) {
@@ -286,14 +285,9 @@ int main(const int argc, char **argv) {
     exit(EXIT_SUCCESS);
   }
 
-  if (options.parse(argc, argv).count("help")) {
-    LOG_INFO("{}", options.help({"", "Group"}));
-    exit(EXIT_SUCCESS);
-  }
-
   App app(config);
 
-  (void) app.run();
+  (void)app.run();
 
   return EXIT_SUCCESS;
 }
