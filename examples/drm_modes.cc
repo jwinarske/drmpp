@@ -23,7 +23,8 @@
 #include "drmpp.h"
 #include "shared_libs/libdrm.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -45,14 +46,15 @@ void handle_signal(const int signal) {
 }
 
 class App final {
- public:
-  explicit App(const Configuration& /* config */)
-      : logging_(std::make_unique<Logging>()) {}
+public:
+  explicit App(const Configuration & /* config */)
+    : logging_(std::make_unique<Logging>()) {
+  }
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto& node : drmpp::utils::get_enabled_drm_nodes(false)) {
+    for (const auto &node: drmpp::utils::get_enabled_drm_nodes(false)) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
@@ -60,15 +62,15 @@ class App final {
       }
 
       LOG_INFO("** {} **", node);
-      if (LibDrm->set_client_cap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+      if (drm->SetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
         LOG_ERROR("drmSetClientCap(ATOMIC)");
         return false;
       }
 
-      const auto drm_res = LibDrm->mode_get_resources(drm_fd);
+      const auto drm_res = drm->ModeGetResources(drm_fd);
       for (auto i = 0; i < drm_res->count_connectors; i++) {
         const auto connector =
-            LibDrm->mode_get_connector(drm_fd, drm_res->connectors[i]);
+            drm->ModeGetConnector(drm_fd, drm_res->connectors[i]);
         if (connector->connection != DRM_MODE_CONNECTED) {
           continue;
         }
@@ -110,7 +112,7 @@ class App final {
         LOG_INFO("\tencoder_id: {}", connector->encoder_id);
 
         for (int j = 0; j < connector->count_modes; ++j) {
-          const drmModeModeInfo* mode = &connector->modes[j];
+          const drmModeModeInfo *mode = &connector->modes[j];
           LOG_INFO("\t* {}", mode->name);
           LOG_INFO("\t\tclock: {}", mode->clock);
           LOG_INFO("\t\thdisplay: {}", mode->hdisplay);
@@ -128,18 +130,18 @@ class App final {
           LOG_INFO("\t\ttype: {}", mode->type);
         }
 
-        LibDrm->mode_free_connector(connector);
+        drm->ModeFreeConnector(connector);
       }
-      LibDrm->mode_free_resources(drm_res);
+      drm->ModeFreeResources(drm_res);
     }
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-modes", "DRM modes");
@@ -155,7 +157,7 @@ int main(const int argc, char** argv) {
 
   const App app({});
 
-  (void)App::run();
+  (void) App::run();
 
   return EXIT_SUCCESS;
 }

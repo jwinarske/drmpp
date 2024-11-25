@@ -25,7 +25,8 @@
 
 #include "drmpp.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -47,21 +48,22 @@ void handle_signal(const int signal) {
 }
 
 class App final {
- public:
-  explicit App(const Configuration& /* config */)
-      : logging_(std::make_unique<Logging>()) {}
+public:
+  explicit App(const Configuration & /* config */)
+    : logging_(std::make_unique<Logging>()) {
+  }
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto& node : drmpp::utils::get_enabled_drm_nodes(true)) {
+    for (const auto &node: drmpp::utils::get_enabled_drm_nodes(true)) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
         return false;
       }
 
-      if (LibDrm->set_client_cap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+      if (drm->SetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
         LOG_ERROR("drmSetClientCap(ATOMIC)");
         return false;
       }
@@ -74,7 +76,7 @@ class App final {
 
       liftoff_device_register_all_planes(device);
 
-      const auto drm_res = LibDrm->mode_get_resources(drm_fd);
+      const auto drm_res = drm->ModeGetResources(drm_fd);
 
       const auto connector =
           drmpp::plane::Common::pick_connector(drm_fd, drm_res);
@@ -95,12 +97,12 @@ class App final {
 
       const auto output = liftoff_output_create(device, crtc->crtc_id);
 
-      LibDrm->mode_free_resources(drm_res);
+      drm->ModeFreeResources(drm_res);
 
       LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
                crtc->crtc_id);
 
-      liftoff_layer* layers[kLayersLen];
+      liftoff_layer *layers[kLayersLen];
       layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
                             crtc->mode.vdisplay, false);
       for (uint32_t i = 1; i < kLayersLen; i++) {
@@ -113,14 +115,14 @@ class App final {
       }
 
       constexpr uint32_t flags = DRM_MODE_ATOMIC_NONBLOCK;
-      const auto req = LibDrm->mode_atomic_alloc();
+      const auto req = drm->ModeAtomicAlloc();
       auto ret = liftoff_output_apply(output, req, flags, nullptr);
       if (ret != 0) {
         LOG_ERROR("liftoff_output_apply");
         return false;
       }
 
-      ret = LibDrm->mode_atomic_commit(drm_fd, req, flags, nullptr);
+      ret = drm->ModeAtomicCommit(drm_fd, req, flags, nullptr);
       if (ret < 0) {
         LOG_ERROR("drmModeAtomicCommit");
         return false;
@@ -128,7 +130,7 @@ class App final {
 
       for (uint32_t i = 0; i < std::size(layers); i++) {
         if (const auto plane = liftoff_layer_get_plane(layers[i]);
-            plane != nullptr) {
+          plane != nullptr) {
           LOG_INFO("Layer {} got assigned to plane {}", i,
                    liftoff_plane_get_id(plane));
         } else {
@@ -138,33 +140,33 @@ class App final {
 
       sleep(1);
 
-      LibDrm->mode_atomic_free(req);
-      for (auto& layer : layers) {
+      drm->ModeAtomicFree(req);
+      for (auto &layer: layers) {
         liftoff_layer_destroy(layer);
       }
       liftoff_output_destroy(output);
-      LibDrm->mode_free_crtc(crtc);
-      LibDrm->mode_free_connector(connector);
+      drm->ModeFreeCrtc(crtc);
+      drm->ModeFreeConnector(connector);
       liftoff_device_destroy(device);
     }
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
 
   static constexpr uint32_t kLayersLen = UINT32_C(4);
 
   /* ARGB 8:8:8:8 */
   static constexpr uint32_t kColors[] = {
-      0xFFFF0000, /* red */
-      0xFF00FF00, /* green */
-      0xFF0000FF, /* blue */
-      0xFFFFFF00, /* yellow */
+    0xFFFF0000, /* red */
+    0xFF00FF00, /* green */
+    0xFF0000FF, /* blue */
+    0xFFFFFF00, /* yellow */
   };
 
-  static liftoff_layer* add_layer(const int drm_fd,
-                                  liftoff_output* output,
+  static liftoff_layer *add_layer(const int drm_fd,
+                                  liftoff_output *output,
                                   const int x,
                                   const int y,
                                   const uint32_t width,
@@ -174,11 +176,11 @@ class App final {
     static size_t color_idx = 0;
     drmpp::plane::Common::dumb_fb fb{};
     uint32_t color;
-    liftoff_layer* layer{};
+    liftoff_layer *layer{};
 
     if (!drmpp::plane::Common::dumb_fb_init(
-            &fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
-            width, height)) {
+      &fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
+      width, height)) {
       LOG_ERROR("failed to create framebuffer");
       return nullptr;
     }
@@ -209,7 +211,7 @@ class App final {
   }
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-simple", "Simple DRM example");
@@ -225,7 +227,7 @@ int main(const int argc, char** argv) {
 
   const App app({});
 
-  (void)App::run();
+  (void) App::run();
 
   return EXIT_SUCCESS;
 }

@@ -49,16 +49,17 @@ void handle_signal(const int signal) {
 }
 
 class App {
- public:
-  explicit App(const Configuration& config)
-      : logging_(std::make_unique<Logging>()), config_(config) {}
+public:
+  explicit App(const Configuration &config)
+    : logging_(std::make_unique<Logging>()), config_(config) {
+  }
 
   ~App() = default;
 
-  static std::vector<uint8_t> create_buffer(std::ifstream& file,
+  static std::vector<uint8_t> create_buffer(std::ifstream &file,
                                             const std::size_t size) {
     std::vector<uint8_t> buffer(size);
-    if (!file.read(reinterpret_cast<char*>(buffer.data()),
+    if (!file.read(reinterpret_cast<char *>(buffer.data()),
                    static_cast<long>(buffer.size()))) {
       buffer.clear();
     }
@@ -66,7 +67,7 @@ class App {
   }
 
   static std::optional<std::ifstream> read_file_content(
-      const std::filesystem::path& path) {
+    const std::filesystem::path &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
       LOG_ERROR("[{}] Failed to open", path.c_str());
@@ -75,7 +76,7 @@ class App {
     return file;
   }
 
-  static bool is_valid_file_path(const std::filesystem::path& path) {
+  static bool is_valid_file_path(const std::filesystem::path &path) {
     if (path.empty() || !exists(path)) {
       return false;
     }
@@ -83,13 +84,13 @@ class App {
   }
 
   static std::vector<uint8_t> return_error_message_and_buffer(
-      const std::filesystem::path& path,
-      const std::string& message) {
+    const std::filesystem::path &path,
+    const std::string &message) {
     LOG_ERROR("[{}] {}", path.c_str(), message);
     return {};
   }
 
-  static std::vector<uint8_t> read_binary_file(const std::string& file_path) {
+  static std::vector<uint8_t> read_binary_file(const std::string &file_path) {
     if (!is_valid_file_path(file_path)) {
       return return_error_message_and_buffer(file_path, "Invalid path");
     }
@@ -99,7 +100,7 @@ class App {
       return return_error_message_and_buffer(file_path, "Failed to open");
     }
 
-    std::ifstream& file = optionalFile.value();
+    std::ifstream &file = optionalFile.value();
     const auto end = file.tellg();
     file.seekg(0, std::ios::beg);
     const auto size = static_cast<std::size_t>(end - file.tellg());
@@ -117,7 +118,7 @@ class App {
     return buffer;
   }
 
-  static bool get_asset_header(const std::string& asset) {
+  static bool get_asset_header(const std::string &asset) {
     LOG_INFO("** {} **", asset.c_str());
     const auto buff = read_binary_file(asset);
     if (buff.empty()) {
@@ -127,10 +128,10 @@ class App {
     std::stringstream ss;
     const auto buffer_size =
         std::round(1.05 * static_cast<double>(buff.size()));
-    auto* compressed_buffer =
-        static_cast<uint8_t*>(malloc(static_cast<std::size_t>(buffer_size)));
+    auto *compressed_buffer =
+        static_cast<uint8_t *>(malloc(static_cast<std::size_t>(buffer_size)));
     int compressed_size = fastlz_compress_level(
-        1, buff.data(), static_cast<int>(buff.size()), compressed_buffer);
+      1, buff.data(), static_cast<int>(buff.size()), compressed_buffer);
     double ratio1 =
         (100.0 * compressed_size) / static_cast<double>(buff.size());
     ss.clear();
@@ -156,12 +157,12 @@ class App {
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
-  const Configuration& config_;
+  const Configuration &config_;
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   Configuration config{};
@@ -170,10 +171,10 @@ int main(const int argc, char** argv) {
       .set_tab_expansion()
       .allow_unrecognised_options()
       .add_options()("help", "Print help")(
-          "k,keymap", "Path to keymap file",
-          cxxopts::value<std::string>(config.keymap_path))(
-          "c,cursor", "Path to left_ptr (default) cursor file",
-          cxxopts::value<std::string>(config.left_ptr_cursor_path));
+        "k,keymap", "Path to keymap file",
+        cxxopts::value<std::string>(config.keymap_path))(
+        "c,cursor", "Path to left_ptr (default) cursor file",
+        cxxopts::value<std::string>(config.left_ptr_cursor_path));
   const auto result = options.parse(argc, argv);
 
   if (result.count("help")) {

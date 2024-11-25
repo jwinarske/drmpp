@@ -19,37 +19,37 @@
 #include "shared_libs/libegl.h"
 #include "shared_libs/shared_library.h"
 
-LibEglExports::LibEglExports(void* lib) {
+LibEglExports::LibEglExports(void *lib) {
   if (lib != nullptr) {
-    GetFuncAddress(lib, "eglGetProcAddress", &get_proc_address);
-    GetFuncAddress(lib, "eglInitialize", &initialize);
-    GetFuncAddress(lib, "eglGetDisplay", &get_display);
-    GetFuncAddress(lib, "eglBindAPI", &bind_api);
-    GetFuncAddress(lib, "eglGetConfigs", &get_configs);
-    GetFuncAddress(lib, "eglGetConfigAttrib", &get_config_attrib);
-    GetFuncAddress(lib, "eglChooseConfig", &choose_config);
-    GetFuncAddress(lib, "eglCreateContext", &create_context);
-    GetFuncAddress(lib, "eglCreateWindowSurface", &create_window_surface);
-    GetFuncAddress(lib, "eglMakeCurrent", &make_current);
-    GetFuncAddress(lib, "eglDestroySurface", &destroy_surface);
-    GetFuncAddress(lib, "eglDestroyContext", &destroy_context);
-    GetFuncAddress(lib, "eglSwapBuffers", &swap_buffers);
-    GetFuncAddress(lib, "eglTerminate", &terminate);
+    GetFuncAddress(lib, "eglGetProcAddress", &GetProcAddress);
+    GetFuncAddress(lib, "eglInitialize", &Initialize);
+    GetFuncAddress(lib, "eglGetDisplay", &GetDisplay);
+    GetFuncAddress(lib, "eglBindAPI", &BindAPI);
+    GetFuncAddress(lib, "eglGetConfigs", &GetConfigs);
+    GetFuncAddress(lib, "eglGetConfigAttrib", &GetConfigAttrib);
+    GetFuncAddress(lib, "eglChooseConfig", &ChooseConfig);
+    GetFuncAddress(lib, "eglCreateContext", &CreateContext);
+    GetFuncAddress(lib, "eglCreateWindowSurface", &CreateWindowSurface);
+    GetFuncAddress(lib, "eglMakeCurrent", &MakeCurrent);
+    GetFuncAddress(lib, "eglDestroySurface", &DestroySurface);
+    GetFuncAddress(lib, "eglDestroyContext", &DestroyContext);
+    GetFuncAddress(lib, "eglSwapBuffers", &SwapBuffers);
+    GetFuncAddress(lib, "eglTerminate", &Terminate);
   }
 }
 
-LibEglExports* LibEgl::operator->() const {
+LibEglExports *egl::operator->() const {
   return loadExports(nullptr);
 }
 
-LibEglExports* LibEgl::loadExports(const char* library_path = nullptr) {
+LibEglExports *egl::loadExports(const char *library_path = nullptr) {
   static LibEglExports exports = [&] {
-    void* lib = dlopen(library_path ? library_path : "libEGL.so",
+    void *lib = dlopen(library_path ? library_path : "libEGL.so",
                        RTLD_LAZY | RTLD_LOCAL);
     return LibEglExports(lib);
   }();
 
-  return exports.get_proc_address ? &exports : nullptr;
+  return exports.GetProcAddress ? &exports : nullptr;
 }
 
-class LibEgl LibEgl;
+class egl egl;
