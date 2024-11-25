@@ -12,5 +12,4 @@
 	url = https://github.com/Tencent/rapidjson.git
 [submodule "subprojects/libliftoff"]
 	path = subprojects/libliftoff
-	url = https://gitlab.freedesktop.org/jwinarske/libliftoff
-	branch = drmpp
+	url = https://gitlab.freedesktop.org/emersion/libliftoff.git
