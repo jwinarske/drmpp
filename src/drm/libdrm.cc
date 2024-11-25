@@ -19,62 +19,59 @@
 #include "shared_libs/libdrm.h"
 #include "shared_libs/shared_library.h"
 
-LibDrmExports::LibDrmExports(void* lib) {
+LibDrmExports::LibDrmExports(void *lib) {
   if (lib != nullptr) {
-    GetFuncAddress(lib, "drmIoctl", &drm_ioctl);
-    GetFuncAddress(lib, "drmSetClientCap", &set_client_cap);
-    GetFuncAddress(lib, "drmModeGetConnector", &mode_get_connector);
-    GetFuncAddress(lib, "drmModeFreeConnector", &mode_free_connector);
-    GetFuncAddress(lib, "drmModeGetEncoder", &mode_get_encoder);
-    GetFuncAddress(lib, "drmModeFreeEncoder", &mode_free_encoder);
-    GetFuncAddress(lib, "drmModeGetCrtc", &mode_get_crtc);
-    GetFuncAddress(lib, "drmModeSetCrtc", &mode_set_crtc);
-    GetFuncAddress(lib, "drmModeFreeCrtc", &mode_free_crtc);
-    GetFuncAddress(lib, "drmModeGetFB2", &mode_get_fb2);
-    GetFuncAddress(lib, "drmModeAddFB", &mode_add_fb);
-    GetFuncAddress(lib, "drmModeAddFB2", &mode_add_fb2);
-    GetFuncAddress(lib, "drmModeAddFB2WithModifiers",
-                   &mode_add_fb2_with_modifiers);
-    GetFuncAddress(lib, "drmModeFreeFB2", &mode_free_fb2);
-    GetFuncAddress(lib, "drmModeAtomicAlloc", &mode_atomic_alloc);
-    GetFuncAddress(lib, "drmModeAtomicFree", &mode_atomic_free);
-    GetFuncAddress(lib, "drmModeAtomicCommit", &mode_atomic_commit);
-    GetFuncAddress(lib, "drmModeAtomicAddProperty", &mode_atomic_add_property);
-    GetFuncAddress(lib, "drmModeAtomicGetCursor", &mode_atomic_get_cursor);
-    GetFuncAddress(lib, "drmModeAtomicSetCursor", &mode_atomic_set_cursor);
-    GetFuncAddress(lib, "drmModeGetProperty", &mode_get_property);
-    GetFuncAddress(lib, "drmModeFreeProperty", &mode_free_property);
-    GetFuncAddress(lib, "drmModeGetPropertyBlob", &mode_get_property_blob);
-    GetFuncAddress(lib, "drmModeFreePropertyBlob", &mode_free_property_blob);
+    GetFuncAddress(lib, "drmIoctl", &Ioctl);
+    GetFuncAddress(lib, "drmSetClientCap", &SetClientCap);
+
+    GetFuncAddress(lib, "drmModeGetConnector", &ModeGetConnector);
+    GetFuncAddress(lib, "drmModeFreeConnector", &ModeFreeConnector);
+    GetFuncAddress(lib, "drmModeGetEncoder", &ModeGetEncoder);
+    GetFuncAddress(lib, "drmModeFreeEncoder", &ModeFreeEncoder);
+    GetFuncAddress(lib, "drmModeGetCrtc", &ModeGetCrtc);
+    GetFuncAddress(lib, "drmModeSetCrtc", &ModeSetCrtc);
+    GetFuncAddress(lib, "drmModeFreeCrtc", &ModeFreeCrtc);
+    GetFuncAddress(lib, "drmModeGetFB2", &ModeGetFB2);
+    GetFuncAddress(lib, "drmModeAddFB", &ModeAddFB);
+    GetFuncAddress(lib, "drmModeAddFB2", &ModeAddFB2);
+    GetFuncAddress(lib, "drmModeAddFB2WithModifiers", &ModeAddFB2WithModifiers);
+    GetFuncAddress(lib, "drmModeFreeFB2", &ModeFreeFB2);
+    GetFuncAddress(lib, "drmModeAtomicAlloc", &ModeAtomicAlloc);
+    GetFuncAddress(lib, "drmModeAtomicFree", &ModeAtomicFree);
+    GetFuncAddress(lib, "drmModeAtomicCommit", &ModeAtomicCommit);
+    GetFuncAddress(lib, "drmModeAtomicAddProperty", &ModeAtomicAddProperty);
+    GetFuncAddress(lib, "drmModeAtomicGetCursor", &ModeAtomicGetCursor);
+    GetFuncAddress(lib, "drmModeAtomicSetCursor", &ModeAtomicSetCursor);
+    GetFuncAddress(lib, "drmModeGetProperty", &ModeGetProperty);
+    GetFuncAddress(lib, "drmModeFreeProperty", &ModeFreeProperty);
+    GetFuncAddress(lib, "drmModeGetPropertyBlob", &ModeGetPropertyBlob);
+    GetFuncAddress(lib, "drmModeFreePropertyBlob", &ModeFreePropertyBlob);
     GetFuncAddress(lib, "drmModeFreeObjectProperties",
-                   &mode_free_object_properties);
-    GetFuncAddress(lib, "drmModeCreatePropertyBlob",
-                   &mode_create_property_blob);
-    GetFuncAddress(lib, "drmModeObjectGetProperties",
-                   &mode_object_get_properties);
-    GetFuncAddress(lib, "drmModeGetResources", &mode_get_resources);
-    GetFuncAddress(lib, "drmModeFreeResources", &mode_free_resources);
-    GetFuncAddress(lib, "drmModeGetPlaneResources", &mode_get_plane_resources);
-    GetFuncAddress(lib, "drmModeFreePlaneResources",
-                   &mode_free_plane_resources);
-    GetFuncAddress(lib, "drmModeGetPlane", &mode_get_plane);
-    GetFuncAddress(lib, "drmModeFreePlane", &mode_free_plane);
-    GetFuncAddress(lib, "drmModeRmFB", &mode_rm_fb);
+                   &ModeFreeObjectProperties);
+    GetFuncAddress(lib, "drmModeCreatePropertyBlob", &ModeCreatePropertyBlob);
+    GetFuncAddress(lib, "drmModeObjectGetProperties", &ModeObjectGetProperties);
+    GetFuncAddress(lib, "drmModeGetResources", &ModeGetResources);
+    GetFuncAddress(lib, "drmModeFreeResources", &ModeFreeResources);
+    GetFuncAddress(lib, "drmModeGetPlaneResources", &ModeGetPlaneResources);
+    GetFuncAddress(lib, "drmModeFreePlaneResources", &ModeFreePlaneResources);
+    GetFuncAddress(lib, "drmModeGetPlane", &ModeGetPlane);
+    GetFuncAddress(lib, "drmModeFreePlane", &ModeFreePlane);
+    GetFuncAddress(lib, "drmModeRmFB", &ModeRmFB);
   }
 }
 
-LibDrmExports* LibDrm::operator->() const {
+LibDrmExports *drm::operator->() const {
   return loadExports(nullptr);
 }
 
-LibDrmExports* LibDrm::loadExports(const char* library_path = nullptr) {
+LibDrmExports *drm::loadExports(const char *library_path = nullptr) {
   static LibDrmExports exports = [&] {
-    void* lib = dlopen(library_path ? library_path : "libdrm.so",
+    void *lib = dlopen(library_path ? library_path : "libdrm.so",
                        RTLD_LAZY | RTLD_LOCAL);
     return LibDrmExports(lib);
   }();
 
-  return exports.mode_atomic_commit ? &exports : nullptr;
+  return exports.ModeAtomicCommit ? &exports : nullptr;
 }
 
-class LibDrm LibDrm;
+class drm drm;

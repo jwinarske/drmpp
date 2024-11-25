@@ -20,9 +20,9 @@
 #include <cstdint>
 
 struct Asset {
-  size_t compressed_size;
-  size_t uncompressed_size;
-  uint8_t data[];
+    size_t compressed_size;
+    size_t uncompressed_size;
+    uint8_t data[];
 };
 
 #endif  // INCLUDE_DRMPP_INPUT_ASSET_H

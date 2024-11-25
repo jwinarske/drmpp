@@ -20,73 +20,87 @@
 #include <EGL/egl.h>
 
 struct LibEglExports {
-  LibEglExports() = default;
-  explicit LibEglExports(void* lib);
+    LibEglExports() = default;
 
-  typedef void* (*EglGetProcAddress)(const char*);
-  typedef EGLBoolean (*EglInitialize)(EGLDisplay dpy,
-                                      EGLint* major,
-                                      EGLint* minor);
-  typedef EGLDisplay (*EglGetDisplay)(EGLNativeDisplayType display_id);
-  typedef EGLBoolean (*EglBindAPI)(EGLenum api);
-  typedef EGLBoolean (*EglGetConfigs)(EGLDisplay dpy,
-                                      EGLConfig* configs,
-                                      EGLint config_size,
-                                      EGLint* num_config);
-  typedef EGLBoolean (*EglGetConfigAttrib)(EGLDisplay dpy,
-                                           EGLConfig config,
-                                           EGLint attribute,
-                                           EGLint* value);
-  typedef EGLBoolean (*EglChooseConfig)(EGLDisplay dpy,
-                                        const EGLint* attrib_list,
-                                        EGLConfig* configs,
+    explicit LibEglExports(void *lib);
+
+    typedef void * (*EglGetProcAddress)(const char *);
+
+    typedef EGLBoolean (*EglInitialize)(EGLDisplay dpy,
+                                        EGLint *major,
+                                        EGLint *minor);
+
+    typedef EGLDisplay (*EglGetDisplay)(EGLNativeDisplayType display_id);
+
+    typedef EGLBoolean (*EglBindAPI)(EGLenum api);
+
+    typedef EGLBoolean (*EglGetConfigs)(EGLDisplay dpy,
+                                        EGLConfig *configs,
                                         EGLint config_size,
-                                        EGLint* num_config);
-  typedef EGLContext (*EglCreateContext)(EGLDisplay dpy,
-                                         EGLConfig config,
-                                         EGLContext share_context,
-                                         const EGLint* attrib_list);
-  typedef EGLSurface (*EglCreateWindowSurface)(EGLDisplay dpy,
-                                               EGLConfig config,
-                                               EGLNativeWindowType win,
-                                               const EGLint* attrib_list);
-  typedef EGLBoolean (*EglMakeCurrent)(EGLDisplay dpy,
-                                       EGLSurface draw,
-                                       EGLSurface read,
-                                       EGLContext ctx);
-  typedef EGLBoolean (*EglDestroySurface)(EGLDisplay dpy, EGLSurface surface);
-  typedef EGLBoolean (*EglDestroyContext)(EGLDisplay dpy, EGLContext ctx);
-  typedef EGLBoolean (*EglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
-  typedef EGLBoolean (*EglTerminate)(EGLDisplay dpy);
+                                        EGLint *num_config);
 
-  EglGetProcAddress get_proc_address = nullptr;
-  EglInitialize initialize = nullptr;
-  EglGetDisplay get_display = nullptr;
-  EglBindAPI bind_api = nullptr;
-  EglGetConfigs get_configs = nullptr;
-  EglGetConfigAttrib get_config_attrib = nullptr;
-  EglChooseConfig choose_config = nullptr;
-  EglCreateContext create_context = nullptr;
-  EglCreateWindowSurface create_window_surface = nullptr;
-  EglMakeCurrent make_current = nullptr;
-  EglDestroySurface destroy_surface = nullptr;
-  EglDestroyContext destroy_context = nullptr;
-  EglTerminate terminate = nullptr;
-  EglSwapBuffers swap_buffers = nullptr;
+    typedef EGLBoolean (*EglGetConfigAttrib)(EGLDisplay dpy,
+                                             EGLConfig config,
+                                             EGLint attribute,
+                                             EGLint *value);
+
+    typedef EGLBoolean (*EglChooseConfig)(EGLDisplay dpy,
+                                          const EGLint *attrib_list,
+                                          EGLConfig *configs,
+                                          EGLint config_size,
+                                          EGLint *num_config);
+
+    typedef EGLContext (*EglCreateContext)(EGLDisplay dpy,
+                                           EGLConfig config,
+                                           EGLContext share_context,
+                                           const EGLint *attrib_list);
+
+    typedef EGLSurface (*EglCreateWindowSurface)(EGLDisplay dpy,
+                                                 EGLConfig config,
+                                                 EGLNativeWindowType win,
+                                                 const EGLint *attrib_list);
+
+    typedef EGLBoolean (*EglMakeCurrent)(EGLDisplay dpy,
+                                         EGLSurface draw,
+                                         EGLSurface read,
+                                         EGLContext ctx);
+
+    typedef EGLBoolean (*EglDestroySurface)(EGLDisplay dpy, EGLSurface surface);
+
+    typedef EGLBoolean (*EglDestroyContext)(EGLDisplay dpy, EGLContext ctx);
+
+    typedef EGLBoolean (*EglSwapBuffers)(EGLDisplay dpy, EGLSurface surface);
+
+    typedef EGLBoolean (*EglTerminate)(EGLDisplay dpy);
+
+    EglGetProcAddress GetProcAddress = nullptr;
+    EglInitialize Initialize = nullptr;
+    EglGetDisplay GetDisplay = nullptr;
+    EglBindAPI BindAPI = nullptr;
+    EglGetConfigs GetConfigs = nullptr;
+    EglGetConfigAttrib GetConfigAttrib = nullptr;
+    EglChooseConfig ChooseConfig = nullptr;
+    EglCreateContext CreateContext = nullptr;
+    EglCreateWindowSurface CreateWindowSurface = nullptr;
+    EglMakeCurrent MakeCurrent = nullptr;
+    EglDestroySurface DestroySurface = nullptr;
+    EglDestroyContext DestroyContext = nullptr;
+    EglSwapBuffers SwapBuffers = nullptr;
+    EglTerminate Terminate = nullptr;
 };
 
-class LibEgl {
- public:
-  static bool IsPresent(const char* library_path = nullptr) {
-    return loadExports(library_path) != nullptr;
-  }
+class egl {
+public:
+    static bool IsPresent(const char *library_path = nullptr) {
+        return loadExports(library_path) != nullptr;
+    }
 
-  LibEglExports* operator->() const;
+    LibEglExports *operator->() const;
 
- private:
-  static LibEglExports* loadExports(const char* library_path);
+private:
+    static LibEglExports *loadExports(const char *library_path);
 };
 
-extern LibEgl LibEgl;
+extern egl egl;
 
 #endif  // INCLUDE_DRMPP_SHARED_LIBS_LIBEGL_H

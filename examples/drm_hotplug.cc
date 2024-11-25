@@ -22,7 +22,8 @@
 
 #include "drmpp.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -44,9 +45,10 @@ void handle_signal(const int signal) {
 }
 
 class App final {
- public:
-  explicit App(const Configuration& /* config */)
-      : logging_(std::make_unique<Logging>()) {}
+public:
+  explicit App(const Configuration & /* config */)
+    : logging_(std::make_unique<Logging>()) {
+  }
 
   ~App() = default;
 
@@ -67,8 +69,8 @@ class App final {
       FD_SET(fd, &fds);
 
       tv = {
-          .tv_sec = 0,
-          .tv_usec = 0,
+        .tv_sec = 0,
+        .tv_usec = 0,
       };
 
       // non-blocking
@@ -88,7 +90,7 @@ class App final {
 
           auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
           LOG_INFO("Enabled and Connected:");
-          for (const auto& n : nodes) {
+          for (const auto &n: nodes) {
             LOG_INFO("\t{}", n);
           }
         } else {
@@ -102,11 +104,11 @@ class App final {
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-hotplug", "monitor drm hotplug events");
@@ -122,7 +124,7 @@ int main(const int argc, char** argv) {
 
   const App app({});
 
-  (void)App::run();
+  (void) App::run();
 
   return EXIT_SUCCESS;
 }

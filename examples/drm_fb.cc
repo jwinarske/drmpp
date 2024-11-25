@@ -27,7 +27,8 @@
 
 #include "drmpp.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -49,20 +50,20 @@ void handle_signal(const int signal) {
 }
 
 class App final {
- public:
+public:
   struct fb_info {
     std::string path;
     int fd;
-    void* ptr;
+    void *ptr;
     fb_fix_screeninfo fix;
     fb_var_screeninfo var;
     unsigned bytespp;
   };
 
-  explicit App(const Configuration& /* config */)
-      : logging_(std::make_unique<Logging>()) {
+  explicit App(const Configuration & /* config */)
+    : logging_(std::make_unique<Logging>()) {
     auto props = drmpp::utils::get_udev_fb_sys_attributes();
-    for (auto& [key, value] : props) {
+    for (auto &[key, value]: props) {
       if (strcmp(key.c_str(), "DEVNAME") == 0) {
         fb_info_.path = value;
       }
@@ -101,7 +102,7 @@ class App final {
 
     fb_info_.ptr = mmap(nullptr,
                         static_cast<size_t>(fb_info_.var.yres_virtual) *
-                            static_cast<size_t>(fb_info_.fix.line_length),
+                        static_cast<size_t>(fb_info_.fix.line_length),
                         PROT_WRITE | PROT_READ, MAP_SHARED, fb_info_.fd, 0);
 
     assert(fb_info_.ptr != MAP_FAILED);
@@ -110,15 +111,15 @@ class App final {
   ~App() {
     close(fb_info_.fd);
     munmap(fb_info_.ptr, static_cast<size_t>(fb_info_.var.yres_virtual) *
-                             static_cast<size_t>(fb_info_.fix.line_length));
+                         static_cast<size_t>(fb_info_.fix.line_length));
   }
 
-  static void paint_pixels(void* image,
+  static void paint_pixels(void *image,
                            const int padding,
                            const int width,
                            const int height,
                            const uint32_t time) {
-    auto pixel = static_cast<uint32_t*>(image);
+    auto pixel = static_cast<uint32_t *>(image);
     const int half_h = padding + (height - padding * 2) / 2;
     const int half_w = padding + (width - padding * 2) / 2;
 
@@ -165,7 +166,7 @@ class App final {
       const auto duration = now.time_since_epoch();
       const auto millis =
           std::chrono::duration_cast<std::chrono::milliseconds>(duration)
-              .count();
+          .count();
 
       paint_pixels(fb_info_.ptr, 20, static_cast<int>(fb_info_.var.xres),
                    static_cast<int>(fb_info_.var.yres), millis);
@@ -174,12 +175,12 @@ class App final {
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
   fb_info fb_info_{};
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-fb", "Query FB parameters");

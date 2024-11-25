@@ -21,16 +21,16 @@
 
 #include "logging/logging.h"
 
-template <typename FunctionPointer>
-void GetFuncAddress(void* library,
-                    const char* function_name,
-                    FunctionPointer* out) {
-  auto symbol = dlsym(library, function_name);
-  if (!symbol) {
-    const char* reason = dlerror();
-    LOG_DEBUG("GetFuncAddress: {} - {}", function_name, reason);
-  }
-  *out = reinterpret_cast<FunctionPointer>(symbol);
+template<typename FunctionPointer>
+void GetFuncAddress(void *library,
+                    const char *function_name,
+                    FunctionPointer *out) {
+    auto symbol = dlsym(library, function_name);
+    if (!symbol) {
+        const char *reason = dlerror();
+        LOG_DEBUG("GetFuncAddress: {} - {}", function_name, reason);
+    }
+    *out = reinterpret_cast<FunctionPointer>(symbol);
 }
 
 #endif  // INCLUDE_DRMPP_SHARED_LIBS_SHARED_LIBRARY_H

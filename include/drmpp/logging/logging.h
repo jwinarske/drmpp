@@ -47,42 +47,41 @@
  * \brief Class for managing logging functionality.
  */
 class Logging {
- public:
-  static constexpr int32_t kLogFlushInterval =
-      INT32_C(5); /**< Log flush interval in seconds */
+public:
+    static constexpr int32_t kLogFlushInterval =
+            INT32_C(5); /**< Log flush interval in seconds */
 
-  /**
-   * \brief Constructs a Logging instance.
-   *
-   * Initializes the logger with a console sink and sets the default logger.
-   * Configures the log pattern and flush settings.
-   */
-  Logging() {
-    console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    logger_ = std::make_shared<spdlog::logger>("waypp", console_sink_);
-    set_default_logger(logger_);
-    spdlog::set_pattern("[%H:%M:%S.%f] [%L] %v");
+    /**
+     * \brief Constructs a Logging instance.
+     *
+     * Initializes the logger with a console sink and sets the default logger.
+     * Configures the log pattern and flush settings.
+     */
+    Logging() {
+        console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        logger_ = std::make_shared<spdlog::logger>("waypp", console_sink_);
+        set_default_logger(logger_);
+        spdlog::set_pattern("[%H:%M:%S.%f] [%L] %v");
 
-    spdlog::flush_on(spdlog::level::err);
-    spdlog::flush_every(std::chrono::seconds(kLogFlushInterval));
-    spdlog::cfg::load_env_levels();
-  }
+        spdlog::flush_on(spdlog::level::err);
+        spdlog::flush_every(std::chrono::seconds(kLogFlushInterval));
+        spdlog::cfg::load_env_levels();
+    }
 
-  /**
-   * \brief Destroys the Logging instance.
-   */
-  ~Logging() = default;
+    /**
+     * \brief Destroys the Logging instance.
+     */
+    ~Logging() = default;
 
-  // Disallow copy and assign.
-  Logging(const Logging&) = delete; /**< Deleted copy constructor */
-  Logging& operator=(const Logging&) =
-      delete; /**< Deleted copy assignment operator */
+    // Disallow copy and assign.
+    Logging(const Logging &) = delete; /**< Deleted copy constructor */
+    Logging &operator=(const Logging &) = delete; /**< Deleted copy assignment operator */
 
- private:
-  std::shared_ptr<spdlog::logger> logger_{}; /**< Logger instance */
-  std::shared_ptr<
-      spdlog::sinks::ansicolor_stdout_sink<spdlog::details::console_mutex>>
-      console_sink_; /**< Console sink for colored output */
+private:
+    std::shared_ptr<spdlog::logger> logger_{}; /**< Logger instance */
+    std::shared_ptr<
+        spdlog::sinks::ansicolor_stdout_sink<spdlog::details::console_mutex> >
+    console_sink_; /**< Console sink for colored output */
 };
 
 #endif
