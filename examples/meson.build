@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: (c) 2024 The drmpp Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+egl_dep = dependency('egl', include_type : 'system', required : true)
+opengl_dep = dependency('opengl', include_type : 'system', required : true)
+
 cmake = import('cmake')
 
 opt_var = cmake.subproject_options()
@@ -88,6 +91,19 @@ executable('drm-lz', ['drm_lz.cc'],
            dependencies : [
                cxxopts_dep,
                drmp_dep,
+           ],
+           install : false,
+)
+
+executable('drm-gbm', ['drm_gbm.cc'],
+           include_directories : incdirs,
+           cpp_args : ['-D__GBM__ -DEGL_NO_X11'],
+           dependencies : [
+               cxxopts_dep,
+               egl_dep,
+               opengl_dep,
+               drmp_dep,
+               gbm_dep,
            ],
            install : false,
 )

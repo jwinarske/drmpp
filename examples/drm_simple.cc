@@ -18,6 +18,9 @@
 #include <filesystem>
 #include <iostream>
 
+#include <drm_fourcc.h>
+#include "shared_libs/libdrm.h"
+
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
@@ -58,7 +61,7 @@ class App final {
         return false;
       }
 
-      if (drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+      if (LibDrm->set_client_cap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
         LOG_ERROR("drmSetClientCap(ATOMIC)");
         return false;
       }
@@ -71,7 +74,7 @@ class App final {
 
       liftoff_device_register_all_planes(device);
 
-      const auto drm_res = drmModeGetResources(drm_fd);
+      const auto drm_res = LibDrm->mode_get_resources(drm_fd);
 
       const auto connector =
           drmpp::plane::Common::pick_connector(drm_fd, drm_res);
@@ -92,7 +95,7 @@ class App final {
 
       const auto output = liftoff_output_create(device, crtc->crtc_id);
 
-      drmModeFreeResources(drm_res);
+      LibDrm->mode_free_resources(drm_res);
 
       LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
                crtc->crtc_id);
@@ -110,22 +113,22 @@ class App final {
       }
 
       constexpr uint32_t flags = DRM_MODE_ATOMIC_NONBLOCK;
-      const auto req = drmModeAtomicAlloc();
+      const auto req = LibDrm->mode_atomic_alloc();
       auto ret = liftoff_output_apply(output, req, flags, nullptr);
       if (ret != 0) {
         LOG_ERROR("liftoff_output_apply");
         return false;
       }
 
-      ret = drmModeAtomicCommit(drm_fd, req, flags, nullptr);
+      ret = LibDrm->mode_atomic_commit(drm_fd, req, flags, nullptr);
       if (ret < 0) {
         LOG_ERROR("drmModeAtomicCommit");
         return false;
       }
 
       for (uint32_t i = 0; i < std::size(layers); i++) {
-        auto plane = liftoff_layer_get_plane(layers[i]);
-        if (plane != nullptr) {
+        if (const auto plane = liftoff_layer_get_plane(layers[i]);
+            plane != nullptr) {
           LOG_INFO("Layer {} got assigned to plane {}", i,
                    liftoff_plane_get_id(plane));
         } else {
@@ -135,13 +138,13 @@ class App final {
 
       sleep(1);
 
-      drmModeAtomicFree(req);
+      LibDrm->mode_atomic_free(req);
       for (auto& layer : layers) {
         liftoff_layer_destroy(layer);
       }
       liftoff_output_destroy(output);
-      drmModeFreeCrtc(crtc);
-      drmModeFreeConnector(connector);
+      LibDrm->mode_free_crtc(crtc);
+      LibDrm->mode_free_connector(connector);
       liftoff_device_destroy(device);
     }
     return false;

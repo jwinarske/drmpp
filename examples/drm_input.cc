@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <libinput.h>
+#include "shared_libs/libdrm.h"
 
 extern "C" {
 #include <libdisplay-info/info.h>
@@ -222,15 +223,15 @@ class App final : public drmpp::input::KeyboardObserver,
         }
 
         LOG_INFO("** {} **", node);
-        if (drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
+        if (LibDrm->set_client_cap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
           LOG_ERROR("drmSetClientCap(ATOMIC)");
           break;
         }
 
-        const auto drm_res = drmModeGetResources(drm_fd);
+        const auto drm_res = LibDrm->mode_get_resources(drm_fd);
         for (auto i = 0; i < drm_res->count_connectors; i++) {
           const auto connector =
-              drmModeGetConnector(drm_fd, drm_res->connectors[i]);
+              LibDrm->mode_get_connector(drm_fd, drm_res->connectors[i]);
           if (connector->connection != DRM_MODE_CONNECTED) {
             continue;
           }
@@ -289,9 +290,9 @@ class App final : public drmpp::input::KeyboardObserver,
             LOG_INFO("\t\tflags: {}", mode->flags);
             LOG_INFO("\t\ttype: {}", mode->type);
           }
-          drmModeFreeConnector(connector);
+          LibDrm->mode_free_connector(connector);
         }
-        drmModeFreeResources(drm_res);
+        LibDrm->mode_free_resources(drm_res);
       }
       LOG_INFO(
           "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "

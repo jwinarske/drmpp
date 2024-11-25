@@ -22,6 +22,7 @@
 LibDrmExports::LibDrmExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "drmIoctl", &drm_ioctl);
+    GetFuncAddress(lib, "drmSetClientCap", &set_client_cap);
     GetFuncAddress(lib, "drmModeGetConnector", &mode_get_connector);
     GetFuncAddress(lib, "drmModeFreeConnector", &mode_free_connector);
     GetFuncAddress(lib, "drmModeGetEncoder", &mode_get_encoder);
@@ -30,6 +31,7 @@ LibDrmExports::LibDrmExports(void* lib) {
     GetFuncAddress(lib, "drmModeSetCrtc", &mode_set_crtc);
     GetFuncAddress(lib, "drmModeFreeCrtc", &mode_free_crtc);
     GetFuncAddress(lib, "drmModeGetFB2", &mode_get_fb2);
+    GetFuncAddress(lib, "drmModeAddFB", &mode_add_fb);
     GetFuncAddress(lib, "drmModeAddFB2", &mode_add_fb2);
     GetFuncAddress(lib, "drmModeAddFB2WithModifiers",
                    &mode_add_fb2_with_modifiers);
