@@ -19,11 +19,16 @@
 #include "shared_libs/libdrm.h"
 #include "shared_libs/shared_library.h"
 
-LibDrmExports::LibDrmExports(void *lib) {
+LibDrmExports::LibDrmExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "drmIoctl", &Ioctl);
     GetFuncAddress(lib, "drmSetClientCap", &SetClientCap);
-
+    GetFuncAddress(lib, "drmGetVersion", &GetVersion);
+    GetFuncAddress(lib, "drmFreeVersion", &FreeVersion);
+    GetFuncAddress(lib, "drmGetCap", &GetCap);
+    GetFuncAddress(lib, "drmGetDevice", &GetDevice);
+    GetFuncAddress(lib, "drmFreeDevice", &FreeDevice);
+    GetFuncAddress(lib, "drmModeGetConnectorCurrent", &ModeGetConnectorCurrent);
     GetFuncAddress(lib, "drmModeGetConnector", &ModeGetConnector);
     GetFuncAddress(lib, "drmModeFreeConnector", &ModeFreeConnector);
     GetFuncAddress(lib, "drmModeGetEncoder", &ModeGetEncoder);
@@ -31,10 +36,12 @@ LibDrmExports::LibDrmExports(void *lib) {
     GetFuncAddress(lib, "drmModeGetCrtc", &ModeGetCrtc);
     GetFuncAddress(lib, "drmModeSetCrtc", &ModeSetCrtc);
     GetFuncAddress(lib, "drmModeFreeCrtc", &ModeFreeCrtc);
+    GetFuncAddress(lib, "drmModeGetFB", &ModeGetFB);
     GetFuncAddress(lib, "drmModeGetFB2", &ModeGetFB2);
     GetFuncAddress(lib, "drmModeAddFB", &ModeAddFB);
     GetFuncAddress(lib, "drmModeAddFB2", &ModeAddFB2);
     GetFuncAddress(lib, "drmModeAddFB2WithModifiers", &ModeAddFB2WithModifiers);
+    GetFuncAddress(lib, "drmModeFreeFB", &ModeFreeFB);
     GetFuncAddress(lib, "drmModeFreeFB2", &ModeFreeFB2);
     GetFuncAddress(lib, "drmModeAtomicAlloc", &ModeAtomicAlloc);
     GetFuncAddress(lib, "drmModeAtomicFree", &ModeAtomicFree);
@@ -60,13 +67,13 @@ LibDrmExports::LibDrmExports(void *lib) {
   }
 }
 
-LibDrmExports *drm::operator->() const {
+LibDrmExports* drm::operator->() const {
   return loadExports(nullptr);
 }
 
-LibDrmExports *drm::loadExports(const char *library_path = nullptr) {
+LibDrmExports* drm::loadExports(const char* library_path = nullptr) {
   static LibDrmExports exports = [&] {
-    void *lib = dlopen(library_path ? library_path : "libdrm.so",
+    void* lib = dlopen(library_path ? library_path : "libdrm.so",
                        RTLD_LAZY | RTLD_LOCAL);
     return LibDrmExports(lib);
   }();

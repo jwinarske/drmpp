@@ -33,8 +33,7 @@ extern "C" {
 
 #include "drmpp.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -57,9 +56,9 @@ void handle_signal(const int signal) {
 
 class App final : public drmpp::input::KeyboardObserver,
                   public drmpp::input::SeatObserver {
-public:
-  explicit App(const Configuration & /*config */)
-    : logging_(std::make_unique<Logging>()) {
+ public:
+  explicit App(const Configuration& /*config */)
+      : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
@@ -68,7 +67,7 @@ public:
 
   [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  static void print_info(const di_info *info) {
+  static void print_info(const di_info* info) {
     auto str = di_info_get_make(info);
     LOG_INFO("make: [{}]", str ? str : "");
     free(str);
@@ -121,13 +120,13 @@ public:
       LOG_INFO("signal colorimetry: ICtCp");
   }
 
-  void notify_seat_capabilities(drmpp::input::Seat *seat,
+  void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps & SEAT_CAPABILITIES_KEYBOARD) {
       if (const auto keyboards = seat_->get_keyboards();
-        keyboards.has_value()) {
-        for (auto const &keyboard: *keyboards.value()) {
+          keyboards.has_value()) {
+        for (auto const& keyboard : *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
       }
@@ -135,13 +134,13 @@ public:
   }
 
   void notify_keyboard_xkb_v1_key(
-    drmpp::input::Keyboard *keyboard,
-    uint32_t time,
-    uint32_t xkb_scancode,
-    bool keymap_key_repeats,
-    const uint32_t state,
-    int xdg_key_symbol_count,
-    const xkb_keysym_t *xdg_key_symbols) override {
+      drmpp::input::Keyboard* keyboard,
+      uint32_t time,
+      uint32_t xkb_scancode,
+      bool keymap_key_repeats,
+      const uint32_t state,
+      int xdg_key_symbol_count,
+      const xkb_keysym_t* xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape ||
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
@@ -159,9 +158,8 @@ public:
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
-        for (const auto &node: nodes) {
-          std::string node_info =
-              drmpp::info::DrmInfo::get_node_info(node.c_str());
+        for (const auto& node : nodes) {
+          std::string node_info = drmpp::info::DrmInfo::get_node_info(node);
           std::cout << node_info << std::endl;
         }
       } else if (xdg_key_symbols[0] == XKB_KEY_a) {
@@ -174,9 +172,9 @@ public:
       } else if (xdg_key_symbols[0] == XKB_KEY_e) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
         auto nodes = drmpp::utils::get_enabled_drm_output_nodes(true);
-        for (const auto &node: nodes) {
+        for (const auto& node : nodes) {
           std::string edid_path = node + std::string("/edid");
-          FILE *f = fopen(edid_path.c_str(), "r");
+          FILE* f = fopen(edid_path.c_str(), "r");
           if (!f) {
             DLOG_DEBUG("Failed to load file: {}", edid_path);
             return;
@@ -216,7 +214,7 @@ public:
       }
     } else if (xdg_key_symbols[0] == XKB_KEY_m) {
       std::scoped_lock<std::mutex> lock(cmd_mutex_);
-      for (const auto &node: drmpp::utils::get_enabled_drm_nodes(false)) {
+      for (const auto& node : drmpp::utils::get_enabled_drm_nodes(false)) {
         const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
         if (drm_fd < 0) {
           LOG_ERROR("Failed to open {}", node.c_str());
@@ -274,7 +272,7 @@ public:
           LOG_INFO("\tencoder_id: {}", connector->encoder_id);
 
           for (int j = 0; j < connector->count_modes; ++j) {
-            const drmModeModeInfo *mode = &connector->modes[j];
+            const drmModeModeInfo* mode = &connector->modes[j];
             LOG_INFO("\t* {}", mode->name);
             LOG_INFO("\t\tclock: {}", mode->clock);
             LOG_INFO("\t\thdisplay: {}", mode->hdisplay);
@@ -296,21 +294,21 @@ public:
         drm->ModeFreeResources(drm_res);
       }
       LOG_INFO(
-        "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-        "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-        time, xkb_scancode, keymap_key_repeats,
-        state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-        xdg_key_symbol_count, xdg_key_symbols[0]);
+          "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+          "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+          time, xkb_scancode, keymap_key_repeats,
+          state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+          xdg_key_symbol_count, xdg_key_symbols[0]);
     }
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-input", "Input information");

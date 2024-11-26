@@ -22,8 +22,7 @@
 
 #include "drmpp.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -45,27 +44,26 @@ void handle_signal(const int signal) {
 }
 
 class App final {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
+ public:
+  explicit App(const Configuration& /* config */)
+      : logging_(std::make_unique<Logging>()) {}
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    const auto nodes = drmpp::utils::get_enabled_drm_nodes(false);
-    for (const auto &node: nodes) {
-      std::string node_info = drmpp::info::DrmInfo::get_node_info(node.c_str());
+    const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
+    for (const auto& node : nodes) {
+      std::string node_info = drmpp::info::DrmInfo::get_node_info(node);
       std::cout << node_info << std::endl;
     }
     return false;
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-caps", "DRM driver caps to JSON");
@@ -81,7 +79,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }
