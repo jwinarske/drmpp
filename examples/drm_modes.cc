@@ -23,8 +23,7 @@
 #include "drmpp.h"
 #include "shared_libs/libdrm.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -46,15 +45,14 @@ void handle_signal(const int signal) {
 }
 
 class App final {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
+ public:
+  explicit App(const Configuration& /* config */)
+      : logging_(std::make_unique<Logging>()) {}
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes(false)) {
+    for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
@@ -112,7 +110,7 @@ public:
         LOG_INFO("\tencoder_id: {}", connector->encoder_id);
 
         for (int j = 0; j < connector->count_modes; ++j) {
-          const drmModeModeInfo *mode = &connector->modes[j];
+          const drmModeModeInfo* mode = &connector->modes[j];
           LOG_INFO("\t* {}", mode->name);
           LOG_INFO("\t\tclock: {}", mode->clock);
           LOG_INFO("\t\thdisplay: {}", mode->hdisplay);
@@ -137,11 +135,11 @@ public:
     return false;
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-modes", "DRM modes");
@@ -157,7 +155,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

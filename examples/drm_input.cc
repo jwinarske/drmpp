@@ -157,7 +157,7 @@ class App final : public drmpp::input::KeyboardObserver,
         }
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
         std::scoped_lock<std::mutex> lock(cmd_mutex_);
-        const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
+        const auto nodes = drmpp::utils::get_enabled_drm_nodes();
         for (const auto& node : nodes) {
           std::string node_info = drmpp::info::DrmInfo::get_node_info(node);
           std::cout << node_info << std::endl;
@@ -214,7 +214,7 @@ class App final : public drmpp::input::KeyboardObserver,
       }
     } else if (xdg_key_symbols[0] == XKB_KEY_m) {
       std::scoped_lock<std::mutex> lock(cmd_mutex_);
-      for (const auto& node : drmpp::utils::get_enabled_drm_nodes(false)) {
+      for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
         const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
         if (drm_fd < 0) {
           LOG_ERROR("Failed to open {}", node.c_str());
