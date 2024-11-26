@@ -51,11 +51,9 @@ class App final {
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    const auto nodes = drmpp::utils::get_enabled_drm_nodes(true);
-    for (const auto& node : nodes) {
-      std::string node_info = drmpp::info::DrmInfo::get_node_info(node);
-      std::cout << node_info << std::endl;
-    }
+    const auto nodes = drmpp::utils::get_drm_nodes();
+    const std::string node_info = drmpp::info::DrmInfo::get_node_info(nodes);
+    std::cout << node_info << std::endl;
     return false;
   }
 

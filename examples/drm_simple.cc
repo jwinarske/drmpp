@@ -56,7 +56,7 @@ public:
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes(true)) {
+    for (const auto &node: drmpp::utils::get_enabled_drm_nodes()) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());

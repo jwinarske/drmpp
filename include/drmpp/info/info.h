@@ -17,6 +17,8 @@
 #ifndef INCLUDE_DRMPP_KMS_INFO_INFO_H_
 #define INCLUDE_DRMPP_KMS_INFO_INFO_H_
 
+#include <vector>
+
 #include <rapidjson/document.h>
 #include <xf86drmMode.h>
 
@@ -32,6 +34,14 @@ struct DrmInfo {
    * \return A string containing the node information.
    */
   static std::string get_node_info(const std::string& path);
+
+  /**
+   * \brief Retrieves node information for the vector of device nodes.
+   *
+   * \param nodes vector of DRM nodes.
+   * \return A string containing the node information.
+   */
+  static std::string get_node_info(const std::vector<std::string>& nodes);
 
  private:
   /**

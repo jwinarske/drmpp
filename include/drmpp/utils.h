@@ -17,6 +17,7 @@
 #ifndef INCLUDE_DRMPP_UTILS_H_
 #define INCLUDE_DRMPP_UTILS_H_
 
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -26,9 +27,9 @@
 #include <iomanip>
 #include <ostream>
 
-#include "drmpp.h"
-
 #include <input/asset.h>
+
+#include "logging/logging.h"
 
 namespace drmpp::utils {
 /**
@@ -300,46 +301,117 @@ inline void get_udev_sys_attributes(const char* subsystem) {
 }
 
 /**
- * \brief Retrieves the enabled DRM nodes.
+ * \brief Retrieves a list of DRM (Direct Rendering Manager) device nodes.
  *
- * \param connected If true, only connected nodes are retrieved.
- * \return A vector of strings containing the enabled DRM nodes.
+ * This function uses the udev library to enumerate and collect DRM device nodes
+ * from the /dev/dri/ directory. Specifically, it collects nodes that match the
+ * pattern "/dev/dri/card*" and excludes nodes that match the pattern
+ * "/dev/dri/render*". The resulting list of device nodes is sorted before being
+ * returned.
+ *
+ * \return A sorted vector of strings, each representing a DRM device node path.
  */
-inline std::vector<std::string> get_enabled_drm_nodes(const bool connected) {
-  std::vector<std::string> result;
+inline std::vector<std::string> get_drm_nodes() {
+  std::vector<std::string> card_nodes;
 
-  const auto udev = udev_new();
+  udev* udev = udev_new();
   if (!udev) {
-    LOG_ERROR("Can't create udev");
-    return {};
+    LOG_ERROR("Cannot create udev object");
+    return card_nodes;
   }
 
-  const auto enumerate = udev_enumerate_new(udev);
+  udev_enumerate* enumerate = udev_enumerate_new(udev);
+  if (!enumerate) {
+    LOG_ERROR("Cannot create udev enumerate object");
+    udev_unref(udev);
+    return card_nodes;
+  }
+
   udev_enumerate_add_match_subsystem(enumerate, "drm");
   udev_enumerate_scan_devices(enumerate);
 
-  const auto devices = udev_enumerate_get_list_entry(enumerate);
-  udev_list_entry* dev_list_entry;
-  udev_list_entry_foreach(dev_list_entry, devices) {
-    const auto path = udev_list_entry_get_name(dev_list_entry);
-    const auto dev = udev_device_new_from_syspath(udev, path);
-    if (!udev_device_get_devnode(dev)) {
-      if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") ==
-          0) {
-        const auto parent = udev_device_get_parent(dev);
-        auto parent_node = udev_device_get_devnode(parent);
-        if (connected && (strcmp(udev_device_get_sysattr_value(dev, "status"),
-                                 "connected") == 0)) {
-          result.emplace_back(parent_node);
-        }
+  udev_list_entry* devices = udev_enumerate_get_list_entry(enumerate);
+  udev_list_entry* entry;
+
+  udev_list_entry_foreach(entry, devices) {
+    const char* path = udev_list_entry_get_name(entry);
+    udev_device* device = udev_device_new_from_syspath(udev, path);
+
+    if (const char* dev_node = udev_device_get_devnode(device)) {
+      if (std::string node(dev_node);
+          node.find("/dev/dri/card") == 0 &&
+          node.find("/dev/dri/render") == std::string::npos) {
+        card_nodes.push_back(node);
       }
     }
-    udev_device_unref(dev);
+
+    udev_device_unref(device);
   }
+
   udev_enumerate_unref(enumerate);
   udev_unref(udev);
 
-  return result;
+  // Sort the resulting vector
+  std::sort(card_nodes.begin(), card_nodes.end());
+
+  return card_nodes;
+}
+
+/**
+ * \brief Retrieves a list of enabled DRM (Direct Rendering Manager) nodes.
+ *
+ * This method interacts with the udev library to enumerate and identify
+ * enabled DRM nodes on the system. It creates and manages udev objects
+ * and retrieves device paths for all enabled DRM devices.
+ *
+ * \return A vector of strings, where each string represents the device path
+ *         of an enabled DRM node.
+ */
+inline std::vector<std::string> get_enabled_drm_nodes() {
+  std::vector<std::string> enabled_devices;
+
+  udev* udev = udev_new();
+  if (!udev) {
+    LOG_ERROR("Cannot create udev object");
+    return enabled_devices;
+  }
+
+  udev_enumerate* enumerate = udev_enumerate_new(udev);
+  if (!enumerate) {
+    LOG_ERROR("Cannot create udev enumerate object");
+    udev_unref(udev);
+    return enabled_devices;
+  }
+
+  udev_enumerate_scan_devices(enumerate);
+
+  udev_list_entry* devices = udev_enumerate_get_list_entry(enumerate);
+  udev_list_entry* entry;
+
+  udev_list_entry_foreach(entry, devices) {
+    const char* path = udev_list_entry_get_name(entry);
+    udev_device* device = udev_device_new_from_syspath(udev, path);
+    if (const char* enabled = udev_device_get_sysattr_value(device, "enabled");
+        enabled && std::string(enabled) == "enabled") {
+      if (udev_device* parent_device = udev_device_get_parent(device)) {
+        if (const char* dev_node = udev_device_get_devnode(parent_device)) {
+          if (std::find(enabled_devices.begin(), enabled_devices.end(),
+                        dev_node) == enabled_devices.end()) {
+            enabled_devices.emplace_back(dev_node);
+          }
+        }
+      }
+    }
+    udev_device_unref(device);
+  }
+
+  udev_enumerate_unref(enumerate);
+  udev_unref(udev);
+
+  // Sort the resulting vector
+  std::sort(enabled_devices.begin(), enabled_devices.end());
+
+  return enabled_devices;
 }
 
 /**
@@ -371,8 +443,12 @@ inline std::vector<std::string> get_enabled_drm_output_nodes(
     if (!udev_device_get_devnode(dev)) {
       if (strcmp(udev_device_get_sysattr_value(dev, "enabled"), "enabled") ==
           0) {
-        if (connected && strcmp(udev_device_get_sysattr_value(dev, "status"),
-                                "connected") == 0) {
+        if (connected) {
+          if (strcmp(udev_device_get_sysattr_value(dev, "status"),
+                     "connected") == 0) {
+            result.emplace_back(path);
+          }
+        } else {
           result.emplace_back(path);
         }
       }
@@ -386,7 +462,8 @@ inline std::vector<std::string> get_enabled_drm_output_nodes(
 }
 
 /**
- * \brief Saves the current I/O stream flags and restores them upon destruction.
+ * \brief Saves the current I/O stream flags and restores them upon
+ * destruction.
  */
 class IosFlagSaver {
  public:

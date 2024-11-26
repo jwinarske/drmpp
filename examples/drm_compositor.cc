@@ -25,8 +25,7 @@
 #include "drmpp.h"
 #include "shared_libs/libdrm.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
@@ -48,15 +47,14 @@ void handle_signal(const int signal) {
 }
 
 class App final {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
+ public:
+  explicit App(const Configuration& /* config */)
+      : logging_(std::make_unique<Logging>()) {}
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes(true)) {
+    for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
@@ -106,12 +104,12 @@ public:
       const auto composition_layer =
           add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
                     crtc->mode.vdisplay, false, true, &composition_fb);
-      liftoff_layer *layers[kLayersLen];
+      liftoff_layer* layers[kLayersLen];
       drmpp::plane::Common::dumb_fb fbs[kLayersLen]{};
       layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
                             crtc->mode.vdisplay, false, true, &fbs[0]);
       for (uint32_t i = 1; i < kLayersLen; i++) {
-        layers[i] = add_layer(drm_fd, output, 100 * (int) i, 100 * (int) i, 256,
+        layers[i] = add_layer(drm_fd, output, 100 * (int)i, 100 * (int)i, 256,
                               256, i % 2, false, &fbs[i]);
       }
 
@@ -133,8 +131,8 @@ public:
       // Composite layers that didn't make it into a plane
       for (uint32_t i = 1; i < kLayersLen; i++) {
         if (liftoff_layer_needs_composition(layers[i])) {
-          composite(drm_fd, &composition_fb, &fbs[i], (int) i * 100,
-                    (int) i * 100);
+          composite(drm_fd, &composition_fb, &fbs[i], (int)i * 100,
+                    (int)i * 100);
         }
       }
 
@@ -157,7 +155,7 @@ public:
 
       drm->ModeAtomicFree(req);
       liftoff_layer_destroy(composition_layer);
-      for (auto &layer: layers) {
+      for (auto& layer : layers) {
         liftoff_layer_destroy(layer);
       }
       liftoff_output_destroy(output);
@@ -168,29 +166,29 @@ public:
     return false;
   }
 
-private:
+ private:
   std::unique_ptr<Logging> logging_;
 
   static constexpr uint32_t kLayersLen = UINT32_C(6);
 
   /* ARGB 8:8:8:8 */
   static constexpr uint32_t kColors[] = {
-    0xFFFF0000, /* red */
-    0xFF00FF00, /* green */
-    0xFF0000FF, /* blue */
-    0xFFFFFF00, /* yellow */
+      0xFFFF0000, /* red */
+      0xFF00FF00, /* green */
+      0xFF0000FF, /* blue */
+      0xFFFFFF00, /* yellow */
   };
 
   // Naive compositor for opaque buffers
   static void composite(const int drm_fd,
-                        drmpp::plane::Common::dumb_fb const *dst_fb,
-                        drmpp::plane::Common::dumb_fb const *src_fb,
+                        drmpp::plane::Common::dumb_fb const* dst_fb,
+                        drmpp::plane::Common::dumb_fb const* src_fb,
                         int dst_x,
                         const int dst_y) {
-    const auto dst = static_cast<uint8_t *>(
-      drmpp::plane::Common::dumb_fb_map(dst_fb, drm_fd));
-    const auto src = static_cast<uint8_t *>(
-      drmpp::plane::Common::dumb_fb_map(src_fb, drm_fd));
+    const auto dst = static_cast<uint8_t*>(
+        drmpp::plane::Common::dumb_fb_map(dst_fb, drm_fd));
+    const auto src = static_cast<uint8_t*>(
+        drmpp::plane::Common::dumb_fb_map(src_fb, drm_fd));
 
     auto src_width = static_cast<int>(src_fb->width);
     if (dst_x < 0) {
@@ -206,7 +204,7 @@ private:
         continue;
       }
       memcpy(dst + dst_fb->stride * static_cast<size_t>(y) +
-             static_cast<size_t>(dst_x) * sizeof(uint32_t),
+                 static_cast<size_t>(dst_x) * sizeof(uint32_t),
              src + src_fb->stride * static_cast<size_t>(i),
              static_cast<size_t>(src_width) * sizeof(uint32_t));
     }
@@ -215,18 +213,18 @@ private:
     munmap(src, src_fb->size);
   }
 
-  static liftoff_layer *add_layer(const int drm_fd,
-                                  liftoff_output *output,
+  static liftoff_layer* add_layer(const int drm_fd,
+                                  liftoff_output* output,
                                   const int x,
                                   const int y,
                                   uint32_t width,
                                   uint32_t height,
                                   const bool with_alpha,
                                   const bool white,
-                                  drmpp::plane::Common::dumb_fb *fb) {
+                                  drmpp::plane::Common::dumb_fb* fb) {
     if (!drmpp::plane::Common::dumb_fb_init(
-      fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
-      width, height)) {
+            fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
+            width, height)) {
       LOG_ERROR("failed to create framebuffer");
       return nullptr;
     }
@@ -258,7 +256,7 @@ private:
   }
 };
 
-int main(const int argc, char **argv) {
+int main(const int argc, char** argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-compositor", "Compositor DRM example");
@@ -274,7 +272,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

@@ -1063,4 +1063,17 @@ std::string DrmInfo::get_node_info(const std::string& path) {
 
   return sb.GetString();
 }
+
+std::string DrmInfo::get_node_info(const std::vector<std::string>& nodes) {
+  rapidjson::Document document;
+  document.SetObject();
+  for (const auto& node : nodes) {
+    node_info(node.c_str(), document);
+  }
+  rapidjson::StringBuffer sb;
+  rapidjson::Writer writer(sb);
+  document.Accept(writer);
+
+  return sb.GetString();
+}
 }  // namespace drmpp::info
