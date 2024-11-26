@@ -50,7 +50,7 @@ drmpp_sources = [
 
 drmpp_lib = library('drmpp',
                     drmpp_sources,
-                    cpp_args : ['-DHAVE_GETFB2'],
+#                    cpp_args : ['-DHAVE_GETFB2'],
                     include_directories : incdirs,
                     dependencies : [
                         di_dep,
