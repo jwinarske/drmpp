@@ -67,7 +67,7 @@ class App final : public drmpp::input::KeyboardObserver,
 
   [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  static void print_info(const di_info* info) {
+  static void print_di_info(const di_info* info) {
     auto str = di_info_get_make(info);
     LOG_INFO("make: [{}]", str ? str : "");
     free(str);
@@ -120,6 +120,63 @@ class App final : public drmpp::input::KeyboardObserver,
       LOG_INFO("signal colorimetry: ICtCp");
   }
 
+  static void print_edid(const std::string& node) {
+    std::filesystem::path edid_path(node);
+    edid_path /= "edid";
+    if (!exists(edid_path)) {
+      LOG_ERROR("EDID file not found: {}", edid_path.c_str());
+      return;
+    }
+
+    uintmax_t file_size{};
+    try {
+      file_size = std::filesystem::file_size(edid_path);
+    } catch (const std::filesystem::filesystem_error& e) {
+      LOG_ERROR("Error reading filesize: {}", e.what());
+      return;
+    }
+
+    FILE* f = fopen(edid_path.c_str(), "r");
+    if (!f) {
+      DLOG_DEBUG("Failed to open file: {}", edid_path.c_str());
+      return;
+    }
+
+    // Read EDID
+    auto buffer = std::make_unique<uint8_t[]>(file_size);
+    size_t size{};
+    while (size < file_size) {
+      const size_t bytes_read = fread(&buffer[size], 1, file_size - size, f);
+      if (bytes_read == 0) {
+        if (ferror(f)) {
+          LOG_ERROR("fread failed");
+          break;
+        }
+        if (feof(f)) {
+          break;
+        }
+      }
+      size += bytes_read;
+    }
+    fclose(f);
+
+    // Parse EDID
+    if (size) {
+      const auto info = di_info_parse_edid(buffer.get(), size);
+      if (!info) {
+        LOG_ERROR("di_edid_parse failed");
+        return;
+      }
+
+      LOG_INFO("==========================");
+      LOG_INFO("EDID:");
+      print_di_info(info);
+      LOG_INFO("==========================");
+      di_info_destroy(info);
+    }
+    buffer.reset();
+  }
+
   void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
@@ -144,11 +201,11 @@ class App final : public drmpp::input::KeyboardObserver,
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape ||
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         exit(EXIT_SUCCESS);
       }
       if (xdg_key_symbols[0] == XKB_KEY_d) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         if (drmpp::utils::is_cmd_present("libinput")) {
           const std::string cmd = "libinput list-devices";
           if (std::string result; drmpp::utils::execute(cmd, result)) {
@@ -156,64 +213,28 @@ class App final : public drmpp::input::KeyboardObserver,
           }
         }
       } else if (xdg_key_symbols[0] == XKB_KEY_b) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         const auto nodes = drmpp::utils::get_enabled_drm_nodes();
         for (const auto& node : nodes) {
           std::string node_info = drmpp::info::DrmInfo::get_node_info(node);
           std::cout << node_info << std::endl;
         }
       } else if (xdg_key_symbols[0] == XKB_KEY_a) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         drmpp::utils::get_udev_sys_attributes("drm");
         drmpp::utils::get_udev_sys_attributes("input");
         drmpp::utils::get_udev_sys_attributes("graphics");
         drmpp::utils::get_udev_sys_attributes("vtconsole");
         drmpp::utils::get_udev_sys_attributes("backlight");
       } else if (xdg_key_symbols[0] == XKB_KEY_e) {
-        std::scoped_lock<std::mutex> lock(cmd_mutex_);
+        std::scoped_lock lock(cmd_mutex_);
         auto nodes = drmpp::utils::get_enabled_drm_output_nodes(true);
         for (const auto& node : nodes) {
-          std::string edid_path = node + std::string("/edid");
-          FILE* f = fopen(edid_path.c_str(), "r");
-          if (!f) {
-            DLOG_DEBUG("Failed to load file: {}", edid_path);
-            return;
-          }
-
-          // Read EDID
-          static uint8_t raw[32 * 1024];
-          size_t size{};
-          while (!feof(f)) {
-            size += fread(&raw[size], 1, sizeof(raw) - size, f);
-            if (ferror(f)) {
-              LOG_ERROR("fread failed");
-              break;
-            }
-            if (size >= sizeof(raw)) {
-              LOG_ERROR("Input too large");
-              break;
-            }
-          }
-          fclose(f);
-
-          // Parse EDID
-          if (size) {
-            const auto info = di_info_parse_edid(raw, size);
-            if (!info) {
-              LOG_ERROR("di_edid_parse failed");
-              break;
-            }
-
-            LOG_INFO("==========================");
-            LOG_INFO("EDID:");
-            print_info(info);
-            LOG_INFO("==========================");
-            di_info_destroy(info);
-          }
+          print_edid(node);
         }
       }
     } else if (xdg_key_symbols[0] == XKB_KEY_m) {
-      std::scoped_lock<std::mutex> lock(cmd_mutex_);
+      std::scoped_lock lock(cmd_mutex_);
       for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
         const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
         if (drm_fd < 0) {
@@ -293,13 +314,13 @@ class App final : public drmpp::input::KeyboardObserver,
         }
         drm->ModeFreeResources(drm_res);
       }
-      LOG_INFO(
-          "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-          "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-          time, xkb_scancode, keymap_key_repeats,
-          state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-          xdg_key_symbol_count, xdg_key_symbols[0]);
     }
+    LOG_INFO(
+        "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+        "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+        time, xkb_scancode, keymap_key_repeats,
+        state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+        xdg_key_symbol_count, xdg_key_symbols[0]);
   }
 
  private:
