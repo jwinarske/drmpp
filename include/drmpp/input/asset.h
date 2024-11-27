@@ -19,10 +19,11 @@
 
 #include <cstdint>
 
+template <size_t CompressedSize, size_t UncompressedSize>
 struct Asset {
-    size_t compressed_size;
-    size_t uncompressed_size;
-    uint8_t data[];
+  size_t compressed_size = CompressedSize;
+  size_t uncompressed_size = UncompressedSize;
+  uint8_t data[CompressedSize];
 };
 
 #endif  // INCLUDE_DRMPP_INPUT_ASSET_H

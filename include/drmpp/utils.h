@@ -541,23 +541,24 @@ std::ostream& operator<<(std::ostream& out,
 /**
  * \brief Decompresses an asset using a custom decompression algorithm.
  *
- * This function takes a compressed asset represented as a pair of size and a
- * vector of bytes, and decompresses it into a unique pointer to an array of
- * bytes. The decompression algorithm handles literal runs, short matches, and
- * long matches based on the input data.
+ * This function takes a compressed asset and decompresses it into its original
+ * form. The decompression algorithm handles literal runs, short matches, and
+ * long matches.
  *
- * \param asset A pair containing the size of the decompressed asset and a
- * vector of bytes representing the compressed asset.
- * \return A unique pointer to an array of bytes containing the decompressed
- * asset.
+ * \param data The compressed data as an array of uint8_t.
+ * \param compressed_size The size of the compressed data.
+ * \param uncompressed_size The expected size of the decompressed data.
+ * \return A vector of uint8_t containing the decompressed data.
  */
-inline std::vector<uint8_t> decompress_asset(const Asset& asset) {
+inline std::vector<uint8_t> decompress_asset(const uint8_t data[],
+                                             const size_t compressed_size,
+                                             const size_t uncompressed_size) {
   int src = 0;
   int dest = 0;
 
-  const uint8_t* input = asset.data;
-  const int length = asset.compressed_size;
-  std::vector<uint8_t> buffer(asset.uncompressed_size, 0);
+  const uint8_t* input = data;
+  const int length = compressed_size;
+  std::vector<uint8_t> buffer(uncompressed_size, 0);
 
   uint8_t* output = buffer.data();
 
@@ -598,9 +599,8 @@ inline std::vector<uint8_t> decompress_asset(const Asset& asset) {
       }
     }
   }
-  assert(static_cast<int>(asset.uncompressed_size) == dest);
-  LOG_INFO("asset compressed: {}, decompressed: {}", asset.compressed_size,
-           dest);
+  assert(static_cast<int>(uncompressed_size) == dest);
+  LOG_INFO("asset compressed: {}, decompressed: {}", compressed_size, dest);
   return buffer;
 }
 }  // namespace drmpp::utils
