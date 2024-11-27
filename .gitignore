@@ -1,6 +1,7 @@
 .idea
 .vscode
 buildDir
+.zed
 
 subprojects/edid-decode.wrap
 subprojects/edid-decode
