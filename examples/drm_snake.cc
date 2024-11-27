@@ -22,11 +22,13 @@
 #include <GL/gl.h>
 #include <cxxopts.hpp>
 
+#include "drmpp.h"
+
 #include "shared_libs/libdrm.h"
 #include "shared_libs/libegl.h"
 #include "shared_libs/libgbm.h"
+#include "utils/virtual_terminal.h"
 
-#include "drmpp.h"
 #include "snake/snake.h"
 
 struct Configuration {
@@ -36,17 +38,18 @@ struct Configuration {
 
 static volatile bool gRunning = true;
 
-void handle_signal(int signal) {
+void handle_signal(const int signal) {
   if (signal == SIGINT) {
     gRunning = false;
   }
 }
 
-class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
+class DrmSnakeApp final : public drmpp::utils::VirtualTerminal,
+                          public drmpp::input::KeyboardObserver,
                           public drmpp::input::SeatObserver {
- public:
-  explicit DrmSnakeApp(const Configuration& config)
-      : logging_(std::make_unique<Logging>()) {
+public:
+  explicit DrmSnakeApp(const Configuration &config)
+    : logging_(std::make_unique<Logging>()) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
 
@@ -66,10 +69,12 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
       render();
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    cleanup_drm();
+
     return true;
   }
 
- private:
+private:
   void init_drm() {
     fd_ = open(device_.c_str(), O_RDWR);
     assert(fd_ != 0);
@@ -106,8 +111,8 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     assert(gbm_.device != nullptr);
 
     gbm_.surface = gbm->surface_create(
-        gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
-        GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+      gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
+      GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
     assert(gbm_.surface != nullptr);
 
     static EGLint attributes[] = {
@@ -119,14 +124,14 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
       EGL_ALPHA_SIZE, 0,
       EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
       EGL_NONE
-        // clang-format on
+      // clang-format on
     };
 
     static constexpr EGLint context_attribs[] = {
         // clang-format off
       EGL_CONTEXT_CLIENT_VERSION, 2,
       EGL_NONE
-        // clang-format on
+      // clang-format on
     };
 
     egl_.display = egl->GetDisplay(gbm_.device);
@@ -137,19 +142,19 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     EGLint count = 0;
     egl->GetConfigs(egl_.display, nullptr, 0, &count);
     const auto configs =
-        static_cast<EGLConfig*>(malloc(count * sizeof(EGLConfig)));
+        static_cast<EGLConfig *>(malloc(count * sizeof(EGLConfig)));
     EGLint num_config{};
     egl->ChooseConfig(egl_.display, attributes, configs, count, &num_config);
 
     const int config_index = match_config_to_visual(
-        egl_.display, GBM_FORMAT_XRGB8888, configs, num_config);
+      egl_.display, GBM_FORMAT_XRGB8888, configs, num_config);
 
     egl_.context = egl->CreateContext(egl_.display, configs[config_index],
                                       EGL_NO_CONTEXT, context_attribs);
 
     egl_.surface = egl->CreateWindowSurface(
-        egl_.display, configs[config_index],
-        reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
+      egl_.display, configs[config_index],
+      reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
     free(configs);
 
     egl->MakeCurrent(egl_.display, egl_.surface, egl_.surface, egl_.context);
@@ -202,7 +207,7 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     glColor3f(0.0f, 1.0f, 0.0f);
 
     // Draw the snake
-    for (const auto& [fst, snd] : snake_ctx_.snake) {
+    for (const auto &[fst, snd]: snake_ctx_.snake) {
       glBegin(GL_QUADS);
       glVertex2f(static_cast<float>(fst) * 2.0f / SNAKE_GAME_WIDTH - 1.0f,
                  static_cast<float>(snd) * 2.0f / SNAKE_GAME_HEIGHT - 1.0f);
@@ -221,37 +226,38 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     // Draw the food
     glBegin(GL_QUADS);
     glVertex2f(
-        static_cast<float>(snake_ctx_.food.first) * 2.0f / SNAKE_GAME_WIDTH -
-            1.0f,
-        static_cast<float>(snake_ctx_.food.second) * 2.0f / SNAKE_GAME_HEIGHT -
-            1.0f);
+      static_cast<float>(snake_ctx_.food.first) * 2.0f / SNAKE_GAME_WIDTH -
+      1.0f,
+      static_cast<float>(snake_ctx_.food.second) * 2.0f / SNAKE_GAME_HEIGHT -
+      1.0f);
     glVertex2f(
-        (static_cast<float>(snake_ctx_.food.first) + 1) * 2.0f /
-                SNAKE_GAME_WIDTH -
-            1.0f,
-        static_cast<float>(snake_ctx_.food.second) * 2.0f / SNAKE_GAME_HEIGHT -
-            1.0f);
+      (static_cast<float>(snake_ctx_.food.first) + 1) * 2.0f /
+      SNAKE_GAME_WIDTH -
+      1.0f,
+      static_cast<float>(snake_ctx_.food.second) * 2.0f / SNAKE_GAME_HEIGHT -
+      1.0f);
     glVertex2f((static_cast<float>(snake_ctx_.food.first) + 1) * 2.0f /
-                       SNAKE_GAME_WIDTH -
-                   1.0f,
+               SNAKE_GAME_WIDTH -
+               1.0f,
                (static_cast<float>(snake_ctx_.food.second) + 1) * 2.0f /
-                       SNAKE_GAME_HEIGHT -
-                   1.0f);
+               SNAKE_GAME_HEIGHT -
+               1.0f);
     glVertex2f(
-        static_cast<float>(snake_ctx_.food.first) * 2.0f / SNAKE_GAME_WIDTH -
-            1.0f,
-        (static_cast<float>(snake_ctx_.food.second) + 1) * 2.0f /
-                SNAKE_GAME_HEIGHT -
-            1.0f);
+      static_cast<float>(snake_ctx_.food.first) * 2.0f / SNAKE_GAME_WIDTH -
+      1.0f,
+      (static_cast<float>(snake_ctx_.food.second) + 1) * 2.0f /
+      SNAKE_GAME_HEIGHT -
+      1.0f);
     glEnd();
   }
 
-  static drmModeConnector* find_connector(const int fd,
-                                          const drmModeRes* resources) {
+  static drmModeConnector *find_connector(const int fd,
+                                          const drmModeRes *resources) {
     std::vector<uint32_t> connectors = {
-        resources->connectors,
-        resources->connectors + resources->count_connectors};
-    for (const auto& it : connectors) {
+      resources->connectors,
+      resources->connectors + resources->count_connectors
+    };
+    for (const auto &it: connectors) {
       const auto connector = drm->ModeGetConnector(fd, it);
       if (connector->connection == DRM_MODE_CONNECTED) {
         return connector;
@@ -261,11 +267,12 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     return nullptr;
   }
 
-  static drmModeEncoder* find_encoder(const int fd,
-                                      const drmModeConnector* connector) {
+  static drmModeEncoder *find_encoder(const int fd,
+                                      const drmModeConnector *connector) {
     std::vector<uint32_t> encoders = {
-        connector->encoders, connector->encoders + connector->count_encoders};
-    for (const auto& it : encoders) {
+      connector->encoders, connector->encoders + connector->count_encoders
+    };
+    for (const auto &it: encoders) {
       if (const auto encoder = drm->ModeGetEncoder(fd, it)) {
         return encoder;
       }
@@ -274,8 +281,8 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
   }
 
   static int match_config_to_visual(EGLDisplay egl_display,
-                                    const EGLint& visual_id,
-                                    const EGLConfig* configs,
+                                    const EGLint &visual_id,
+                                    const EGLConfig *configs,
                                     const int count) {
     EGLint id;
     for (auto i = 0; i < count; ++i) {
@@ -290,13 +297,13 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
     return -1;
   }
 
-  void notify_seat_capabilities(drmpp::input::Seat* seat,
+  void notify_seat_capabilities(drmpp::input::Seat *seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps & SEAT_CAPABILITIES_KEYBOARD) {
       if (const auto keyboards = seat_->get_keyboards();
-          keyboards.has_value()) {
-        for (auto const& keyboard : *keyboards.value()) {
+        keyboards.has_value()) {
+        for (auto const &keyboard: *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
       }
@@ -304,13 +311,13 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
   }
 
   void notify_keyboard_xkb_v1_key(
-      drmpp::input::Keyboard* keyboard,
-      uint32_t time,
-      uint32_t xkb_scancode,
-      bool keymap_key_repeats,
-      const uint32_t state,
-      int xdg_key_symbol_count,
-      const xkb_keysym_t* xdg_key_symbols) override {
+    drmpp::input::Keyboard *keyboard,
+    uint32_t time,
+    uint32_t xkb_scancode,
+    bool keymap_key_repeats,
+    const uint32_t state,
+    int xdg_key_symbol_count,
+    const xkb_keysym_t *xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape ||
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
@@ -342,7 +349,7 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
 
   struct {
     drmModeModeInfo mode_info;
-    drmModeCrtc* crtc;
+    drmModeCrtc *crtc;
     uint32_t connector_id;
     uint32_t fb;
     uint32_t previous_fb;
@@ -355,14 +362,14 @@ class DrmSnakeApp final : public drmpp::input::KeyboardObserver,
   } egl_{};
 
   struct {
-    gbm_device* device;
-    gbm_surface* surface;
-    gbm_bo* bo;
-    gbm_bo* previous_bo;
+    gbm_device *device;
+    gbm_surface *surface;
+    gbm_bo *bo;
+    gbm_bo *previous_bo;
   } gbm_{};
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   Configuration config;

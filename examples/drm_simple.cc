@@ -24,6 +24,8 @@
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
+#include "utils/utils.h"
+#include "utils/virtual_terminal.h"
 
 struct Configuration {
 };
@@ -47,13 +49,13 @@ void handle_signal(const int signal) {
   }
 }
 
-class App final {
+class App final : public drmpp::utils::VirtualTerminal {
 public:
   explicit App(const Configuration & /* config */)
     : logging_(std::make_unique<Logging>()) {
   }
 
-  ~App() = default;
+  ~App() override = default;
 
   [[nodiscard]] static bool run() {
     for (const auto &node: drmpp::utils::get_enabled_drm_nodes()) {

@@ -26,6 +26,8 @@
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
+#include "utils/utils.h"
+#include "utils/virtual_terminal.h"
 
 struct Configuration {
 };
@@ -49,7 +51,7 @@ void handle_signal(const int signal) {
   }
 }
 
-class App final {
+class App final : drmpp::utils::VirtualTerminal {
 public:
   struct fb_info {
     std::string path;
@@ -108,7 +110,7 @@ public:
     assert(fb_info_.ptr != MAP_FAILED);
   }
 
-  ~App() {
+  ~App() override {
     close(fb_info_.fd);
     munmap(fb_info_.ptr, static_cast<size_t>(fb_info_.var.yres_virtual) *
                          static_cast<size_t>(fb_info_.fix.line_length));
@@ -172,6 +174,7 @@ public:
                    static_cast<int>(fb_info_.var.yres), millis);
       return true;
     }
+    VirtualTerminal::restore();
     return false;
   }
 

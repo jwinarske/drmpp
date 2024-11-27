@@ -46,11 +46,12 @@ drmpp_sources = [
     'egl/libegl.cc',
     'drm/libdrm.cc',
     'gbm/libgbm.cc',
+    'utils/virtual_terminal.cc',
 ]
 
 drmpp_lib = library('drmpp',
                     drmpp_sources,
-#                    cpp_args : ['-DHAVE_GETFB2'],
+                    #                    cpp_args : ['-DHAVE_GETFB2'],
                     include_directories : incdirs,
                     dependencies : [
                         di_dep,
