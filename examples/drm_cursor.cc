@@ -140,28 +140,28 @@ class App final : public drmpp::input::KeyboardObserver,
   }
 
   void notify_pointer_motion(drmpp::input::Pointer *pointer,
-                             uint32_t time,
-                             double sx,
-                             double sy) override {
+                             const uint32_t time,
+                             const double sx,
+                             const double sy) override {
     LOG_TRACE("dx: {}, dy: {}", sx, sy);
     pointer_x_ = std::clamp(pointer_x_ + sx, 0.0, static_cast<double>(width_));
     pointer_y_ = std::clamp(pointer_y_ + sy, 0.0, static_cast<double>(height_));
   }
 
   void notify_pointer_motion_absolute(drmpp::input::Pointer *pointer,
-                                      uint32_t time,
-                                      double ndc_x,
-                                      double ndc_y) override {
+                                      const uint32_t time,
+                                      const double ndc_x,
+                                      const double ndc_y) override {
     pointer_x_ = static_cast<double>(width_) * ndc_x;
     pointer_y_ = static_cast<double>(height_) * ndc_y;
     LOG_DEBUG("x: {}, y: {}", pointer_x_, pointer_y_);
   }
 
   void notify_pointer_button(drmpp::input::Pointer *pointer,
-                             uint32_t serial,
-                             uint32_t time,
-                             uint32_t button,
-                             uint32_t state) override {
+                             const uint32_t serial,
+                             const uint32_t time,
+                             const uint32_t button,
+                             const uint32_t state) override {
     LOG_INFO("button: {}, state: {}", button, state);
   }
 

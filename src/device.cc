@@ -31,10 +31,10 @@ namespace drmpp {
 class DumbBuffer : public Buffer {
  public:
   explicit DumbBuffer(Device& drm_device,
-                      uint32_t width,
-                      uint32_t height,
-                      uint32_t format,
-                      uint64_t modifier,
+                      const uint32_t width,
+                      const uint32_t height,
+                      const uint32_t format,
+                      const uint64_t modifier,
                       const Plane& plane)
       : Buffer(width, height, format, modifier, plane),
         drm_device_(drm_device) {}
@@ -179,7 +179,9 @@ void GbmBuffer::unmap(void* memory) {
 
 class DrmFramebufferImpl : public Framebuffer {
  public:
-  explicit DrmFramebufferImpl(Device& device, Buffer& buffer, uint32_t fb_id)
+  explicit DrmFramebufferImpl(Device& device,
+                              Buffer& buffer,
+                              const uint32_t fb_id)
       : Framebuffer(buffer, fb_id), device_(device) {}
 
   ~DrmFramebufferImpl() override { ::drmModeRmFB(device_.fd(), fb_id()); }
@@ -197,11 +199,11 @@ Device::~Device() {
   }
 }
 
-std::unique_ptr<Buffer> Device::createDumbBuffer(uint32_t width,
-                                                 uint32_t height,
-                                                 uint32_t bpp,
-                                                 uint32_t format,
-                                                 uint64_t modifier) {
+std::unique_ptr<Buffer> Device::createDumbBuffer(const uint32_t width,
+                                                 const uint32_t height,
+                                                 const uint32_t bpp,
+                                                 const uint32_t format,
+                                                 const uint64_t modifier) {
   drm_mode_create_dumb create = {
       .height = height,
       .width = width,
@@ -228,11 +230,11 @@ std::unique_ptr<Buffer> Device::createDumbBuffer(uint32_t width,
 }
 
 std::unique_ptr<Buffer> Device::createGbmBuffer(
-    uint32_t width,
-    uint32_t height,
-    uint32_t format,
+    const uint32_t width,
+    const uint32_t height,
+    const uint32_t format,
     const std::vector<uint64_t>& allowed_modifiers,
-    uint32_t usage) {
+    const uint32_t usage) {
   struct gbm_bo* bo;
   if (allowed_modifiers.empty()) {
     bo = ::gbm_bo_create(gbm_device_.get(), width, height, format, usage);
@@ -330,7 +332,7 @@ std::unique_ptr<Output> Device::openFirstConnectedOutput() {
   return std::make_unique<Output>(*this, crtc_id, conn_id, mode);
 }
 
-std::optional<uint64_t> Device::try_get_cap(uint64_t cap) const {
+std::optional<uint64_t> Device::try_get_cap(const uint64_t cap) const {
   uint64_t value;
   if (drmGetCap(fd_, cap, &value) == 0) {
     return value;

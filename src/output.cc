@@ -191,7 +191,8 @@ uint32_t Output::addFramebuffer(Buffer* buffer) {
   return fb_cache_[buffer]->fb_id();
 }
 
-std::optional<Output::Props> Output::resolveProps(int fd, uint32_t crtc_id) {
+std::optional<Output::Props> Output::resolveProps(const int fd,
+                                                  const uint32_t crtc_id) {
   Props result = {0};
 
   auto crtc_res =
