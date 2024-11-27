@@ -20,13 +20,15 @@
 
 #include <GL/gl.h>
 
+#include "drmpp.h"
+
 #include "shared_libs/libdrm.h"
 #include "shared_libs/libegl.h"
 #include "shared_libs/libgbm.h"
+#include "utils/virtual_terminal.h"
 
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
 
 struct Configuration {
   std::string device = "/dev/dri/card0";
@@ -52,16 +54,16 @@ void handle_signal(const int signal) {
   }
 }
 
-class App final {
- public:
-  explicit App(const Configuration& config)
-      : logging_(std::make_unique<Logging>()) {
+class App final : public drmpp::utils::VirtualTerminal {
+public:
+  explicit App(const Configuration &config)
+    : logging_(std::make_unique<Logging>()) {
     device_ = config.device;
     mode_index_ = config.mode_index;
     LOG_INFO("Device: {}", device_);
   }
 
-  ~App() = default;
+  ~App() override = default;
 
   bool run() {
     fd_ = open(device_.c_str(), O_RDWR);
@@ -99,8 +101,8 @@ class App final {
     assert(gbm_.device != nullptr);
 
     gbm_.surface = gbm->surface_create(
-        gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
-        GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+      gbm_.device, drm_.mode_info.hdisplay, drm_.mode_info.vdisplay,
+      GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
     assert(gbm_.surface != nullptr);
 
     static EGLint attributes[] = {
@@ -112,14 +114,14 @@ class App final {
       EGL_ALPHA_SIZE, 0,
       EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
       EGL_NONE
-        // clang-format on
+      // clang-format on
     };
 
     static constexpr EGLint context_attribs[] = {
         // clang-format off
       EGL_CONTEXT_CLIENT_VERSION, 2,
       EGL_NONE
-        // clang-format on
+      // clang-format on
     };
 
     egl_.display = egl->GetDisplay(gbm_.device);
@@ -130,19 +132,19 @@ class App final {
     EGLint count = 0;
     egl->GetConfigs(egl_.display, nullptr, 0, &count);
     const auto configs =
-        static_cast<EGLConfig*>(malloc(count * sizeof(EGLConfig)));
+        static_cast<EGLConfig *>(malloc(count * sizeof(EGLConfig)));
     EGLint num_config{};
     egl->ChooseConfig(egl_.display, attributes, configs, count, &num_config);
 
     const int config_index = match_config_to_visual(
-        egl_.display, GBM_FORMAT_XRGB8888, configs, num_config);
+      egl_.display, GBM_FORMAT_XRGB8888, configs, num_config);
 
     egl_.context = egl->CreateContext(egl_.display, configs[config_index],
                                       EGL_NO_CONTEXT, context_attribs);
 
     egl_.surface = egl->CreateWindowSurface(
-        egl_.display, configs[config_index],
-        reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
+      egl_.display, configs[config_index],
+      reinterpret_cast<EGLNativeWindowType>(gbm_.surface), nullptr);
     free(configs);
 
     egl->MakeCurrent(egl_.display, egl_.surface, egl_.surface, egl_.context);
@@ -171,7 +173,7 @@ class App final {
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
 
   std::string device_;
@@ -180,7 +182,7 @@ class App final {
 
   struct {
     drmModeModeInfo mode_info;
-    drmModeCrtc* crtc;
+    drmModeCrtc *crtc;
     uint32_t connector_id;
     uint32_t fb;
     uint32_t previous_fb;
@@ -193,27 +195,27 @@ class App final {
   } egl_{};
 
   struct {
-    gbm_device* device;
-    gbm_surface* surface;
-    gbm_bo* bo;
-    gbm_bo* previous_bo;
+    gbm_device *device;
+    gbm_surface *surface;
+    gbm_bo *bo;
+    gbm_bo *previous_bo;
   } gbm_{};
 
-  static drmModeConnector* find_connector(const int fd,
-                                          const drmModeRes* resources) {
+  static drmModeConnector *find_connector(const int fd,
+                                          const drmModeRes *resources) {
     for (auto i = 0; i < resources->count_connectors; i++) {
-      drmModeConnector* connector =
+      drmModeConnector *connector =
           drm->ModeGetConnector(fd, resources->connectors[i]);
       if (connector->connection == DRM_MODE_CONNECTED) {
         return connector;
       }
       drm->ModeFreeConnector(connector);
     }
-    return nullptr;  // if no connector found
+    return nullptr; // if no connector found
   }
 
-  static drmModeEncoder* find_encoder(const int fd,
-                                      const drmModeConnector* connector) {
+  static drmModeEncoder *find_encoder(const int fd,
+                                      const drmModeConnector *connector) {
     return drm->ModeGetEncoder(fd, connector->encoder_id);
   }
 
@@ -241,8 +243,8 @@ class App final {
   }
 
   static int match_config_to_visual(EGLDisplay egl_display,
-                                    const EGLint& visual_id,
-                                    const EGLConfig* configs,
+                                    const EGLint &visual_id,
+                                    const EGLConfig *configs,
                                     const int count) {
     EGLint id;
     for (auto i = 0; i < count; ++i) {
@@ -258,7 +260,7 @@ class App final {
   }
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   Configuration config;
@@ -287,7 +289,7 @@ int main(const int argc, char** argv) {
 
   App app(config);
 
-  (void)app.run();
+  (void) app.run();
 
   return EXIT_SUCCESS;
 }

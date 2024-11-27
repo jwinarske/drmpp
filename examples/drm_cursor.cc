@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <cxxopts.hpp>
+#include <utils/virtual_terminal.h>
 
 #include "drmpp.h"
 #include "shared_libs/libdrm.h"

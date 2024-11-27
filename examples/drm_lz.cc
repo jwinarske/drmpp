@@ -23,6 +23,7 @@
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
+#include "utils/utils.h"
 
 struct Configuration {
   std::string keymap_path;

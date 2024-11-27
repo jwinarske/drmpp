@@ -21,8 +21,10 @@
 #include <cxxopts.hpp>
 
 #include "drmpp.h"
+#include "utils/utils.h"
 
-struct Configuration {};
+struct Configuration {
+};
 
 static volatile bool gRunning = true;
 
@@ -44,37 +46,33 @@ void handle_signal(const int signal) {
 }
 
 class App final {
- public:
-  explicit App(const Configuration& /* config */)
-      : logging_(std::make_unique<Logging>()) {}
+public:
+  explicit App(const Configuration & /* config */)
+    : logging_(std::make_unique<Logging>()) {
+  }
 
   ~App() = default;
 
   [[nodiscard]] static bool run() {
     const auto udev = udev_new();
 
-    auto mon = udev_monitor_new_from_netlink(udev, "udev");
+    const auto mon = udev_monitor_new_from_netlink(udev, "udev");
     udev_monitor_filter_add_match_subsystem_devtype(mon, "drm", nullptr);
     udev_monitor_enable_receiving(mon);
-    auto fd = udev_monitor_get_fd(mon);
+    const auto fd = udev_monitor_get_fd(mon);
 
     while (gRunning) {
       fd_set fds;
-      timeval tv{};
-      int ret;
-
       FD_ZERO(&fds);
       FD_SET(fd, &fds);
 
-      tv = {
-          .tv_sec = 0,
-          .tv_usec = 0,
-      };
+      timeval tv{};
+      tv.tv_sec = 0;
+      tv.tv_usec = 0;
 
       // non-blocking
-      ret = select(fd + 1, &fds, nullptr, nullptr, &tv);
-      if (ret > 0 && FD_ISSET(fd, &fds)) {
-        if (auto dev = udev_monitor_receive_device(mon)) {
+      if (const int ret = select(fd + 1, &fds, nullptr, nullptr, &tv); ret > 0 && FD_ISSET(fd, &fds)) {
+        if (const auto dev = udev_monitor_receive_device(mon)) {
           auto node = udev_device_get_devnode(dev);
           auto subsystem = udev_device_get_subsystem(dev);
           auto devtype = udev_device_get_devtype(dev);
@@ -88,7 +86,7 @@ class App final {
 
           auto nodes = drmpp::utils::get_enabled_drm_nodes();
           LOG_INFO("Enabled:");
-          for (const auto& n : nodes) {
+          for (const auto &n: nodes) {
             LOG_INFO("\t{}", n);
           }
         } else {
@@ -102,11 +100,11 @@ class App final {
     return false;
   }
 
- private:
+private:
   std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char** argv) {
+int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
   cxxopts::Options options("drm-hotplug", "monitor drm hotplug events");
@@ -122,7 +120,7 @@ int main(const int argc, char** argv) {
 
   const App app({});
 
-  (void)App::run();
+  (void) App::run();
 
   return EXIT_SUCCESS;
 }

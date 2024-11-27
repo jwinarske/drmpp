@@ -38,6 +38,5 @@ extern "C" {
 #include "input/touch.h"
 #include "logging/logging.h"
 #include "plane/plane.h"
-#include "utils.h"
 
 #endif  // INCLUDE_DRMPP_H_
