@@ -44,41 +44,44 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: c-cpp
-          build-mode: manual
+          - language: c-cpp
+            build-mode: manual
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-        cache: 'pip'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
 
-    - name: Install Packages
-      run: |
-        pip install --user meson
-        sudo apt-get -y install ninja-build \
-        libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev
-        meson --version
-        gcc --version
+      - name: Install Packages
+        run: |
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y update
+          sudo apt-get -o DPkg::Lock::Timeout=1200 -y install ninja-build \
+          libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev hwdata \
+          mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev mesa-utils libgbm-dev libvulkan-dev
+          
+          pip install --user meson
+          meson --version
+          gcc --version
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
-    - if: matrix.build-mode == 'manual'
-      shell: bash
-      run: |
-        cd ${{github.workspace}}
-        meson setup buildDir --default-library static
-        ninja -C ${{github.workspace}}/buildDir
+      - if: matrix.build-mode == 'manual'
+        shell: bash
+        run: |
+          cd ${{github.workspace}}
+          meson setup buildDir --default-library static
+          ninja -C ${{github.workspace}}/buildDir
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"

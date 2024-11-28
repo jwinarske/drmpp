@@ -13,3 +13,6 @@
 [submodule "subprojects/libliftoff"]
 	path = subprojects/libliftoff
 	url = https://gitlab.freedesktop.org/emersion/libliftoff.git
+[submodule "subprojects/Vulkan-Headers"]
+	path = subprojects/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git

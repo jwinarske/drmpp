@@ -20,42 +20,22 @@
 
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "utils/utils.h"
-#include "shared_libs/libdrm.h"
+#include "drmpp/input/seat.h"
+#include "drmpp/shared_libs/libdrm.h"
+#include "drmpp/utils/utils.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
+class App final : public Logging {
+ public:
+  explicit App(const Configuration& /* config */) {}
 
-class App final {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
-
-  ~App() = default;
+  ~App() override = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes()) {
+    for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
@@ -113,7 +93,7 @@ public:
         LOG_INFO("\tencoder_id: {}", connector->encoder_id);
 
         for (int j = 0; j < connector->count_modes; ++j) {
-          const drmModeModeInfo *mode = &connector->modes[j];
+          const drmModeModeInfo* mode = &connector->modes[j];
           LOG_INFO("\t* {}", mode->name);
           LOG_INFO("\t\tclock: {}", mode->clock);
           LOG_INFO("\t\thdisplay: {}", mode->hdisplay);
@@ -137,13 +117,14 @@ public:
     }
     return false;
   }
-
-private:
-  std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char **argv) {
-  std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   cxxopts::Options options("drm-modes", "DRM modes");
   options.set_width(80)
@@ -158,7 +139,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

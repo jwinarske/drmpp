@@ -19,7 +19,7 @@
 #include "shared_libs/libegl.h"
 #include "shared_libs/shared_library.h"
 
-LibEglExports::LibEglExports(void *lib) {
+LibEglExports::LibEglExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "eglGetProcAddress", &GetProcAddress);
     GetFuncAddress(lib, "eglInitialize", &Initialize);
@@ -38,13 +38,13 @@ LibEglExports::LibEglExports(void *lib) {
   }
 }
 
-LibEglExports *egl::operator->() const {
+LibEglExports* egl::operator->() const {
   return loadExports(nullptr);
 }
 
-LibEglExports *egl::loadExports(const char *library_path = nullptr) {
+LibEglExports* egl::loadExports(const char* library_path = nullptr) {
   static LibEglExports exports = [&] {
-    void *lib = dlopen(library_path ? library_path : "libEGL.so",
+    void* lib = dlopen(library_path ? library_path : "libEGL.so",
                        RTLD_LAZY | RTLD_LOCAL);
     return LibEglExports(lib);
   }();

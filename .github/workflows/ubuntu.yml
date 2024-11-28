@@ -34,7 +34,8 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=1200 -y update
           sudo apt-get -o DPkg::Lock::Timeout=1200 -y install ninja-build \
           libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev hwdata \
-          mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev mesa-utils libgbm-dev
+          mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev mesa-utils libgbm-dev libvulkan-dev
+          
           pip install --user meson
           meson --version
           gcc --version

@@ -3,6 +3,8 @@ name: clang-tidy
 on:
   pull_request:
     types: [ opened, synchronize, reopened, closed ]
+  push:
+    branches: [ "dev" ]
 
 jobs:
   tidy:
@@ -26,7 +28,7 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=1200 -y update
           sudo apt-get -o DPkg::Lock::Timeout=1200 -y install ninja-build \
           libdrm-dev libinput-dev libsystemd-dev libxkbcommon-dev libgbm-dev \
-          mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev mesa-utils
+          mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev mesa-utils libvulkan-dev
 
           wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb
           sudo apt install ./libtinfo5_6.3-2ubuntu0.1_amd64.deb

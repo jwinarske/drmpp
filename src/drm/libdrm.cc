@@ -23,6 +23,11 @@ LibDrmExports::LibDrmExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "drmIoctl", &Ioctl);
     GetFuncAddress(lib, "drmSetClientCap", &SetClientCap);
+    GetFuncAddress(lib, "drmGetDevice2", &GetDevice2);
+    GetFuncAddress(lib, "drmGetDevices2", &GetDevices2);
+    GetFuncAddress(lib, "drmFreeDevices", &FreeDevices);
+    GetFuncAddress(lib, "drmGetMagic", &GetMagic);
+    GetFuncAddress(lib, "drmAuthMagic", &AuthMagic);
     GetFuncAddress(lib, "drmGetVersion", &GetVersion);
     GetFuncAddress(lib, "drmFreeVersion", &FreeVersion);
     GetFuncAddress(lib, "drmGetCap", &GetCap);

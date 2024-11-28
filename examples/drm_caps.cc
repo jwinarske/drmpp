@@ -20,38 +20,18 @@
 
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "utils/utils.h"
+#include "drmpp/info/info.h"
+#include "drmpp/utils/utils.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
+class App final : public Logging {
+ public:
+  explicit App(const Configuration& /* config */) {}
 
-class App final {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
-
-  ~App() = default;
+  ~App() override = default;
 
   [[nodiscard]] static bool run() {
     const auto nodes = drmpp::utils::get_drm_nodes();
@@ -59,13 +39,14 @@ public:
     std::cout << node_info << std::endl;
     return false;
   }
-
-private:
-  std::unique_ptr<Logging> logging_;
 };
 
-int main(const int argc, char **argv) {
-  std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   cxxopts::Options options("drm-caps", "DRM driver caps to JSON");
   options.set_width(80)
@@ -80,7 +61,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

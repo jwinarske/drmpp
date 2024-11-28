@@ -15,3 +15,19 @@
  */
 
 #include "input/touch.h"
+
+namespace drmpp::input {
+Touch::Touch(event_mask const& event_mask) {
+  event_mask_ = {
+      .enabled = event_mask.enabled,
+      .all = event_mask.all,
+  };
+}
+
+Touch::~Touch() = default;
+
+void Touch::set_event_mask(event_mask const& event_mask) {
+  event_mask_.enabled = event_mask.enabled;
+  event_mask_.all = event_mask.all;
+}
+}  // namespace drmpp::input
