@@ -18,12 +18,30 @@
 #define INCLUDE_DRMPP_INPUT_ASSET_H
 
 #include <cstdint>
+#include <vector>
+
+#include "fastlz.h"
 
 template <size_t CompressedSize, size_t UncompressedSize>
 struct Asset {
   size_t compressed_size = CompressedSize;
   size_t uncompressed_size = UncompressedSize;
   uint8_t data[CompressedSize];
+
+  std::vector<uint8_t> decompress() const {
+    std::vector<uint8_t> v;
+
+    v.resize(uncompressed_size);
+
+    int result = ::fastlz_decompress(data, compressed_size, v.data(), v.size());
+    if (result == 0) {
+      return {};
+    } else if (static_cast<size_t>(result) != uncompressed_size) {
+      return {};
+    }
+
+    return v;
+  }
 };
 
 #endif  // INCLUDE_DRMPP_INPUT_ASSET_H
