@@ -47,8 +47,6 @@ namespace drmpp::utils {
             return;
         }
 
-        atexit(restore);
-
         // disable canonical mode and echo
         termios tio = gPreviousTio;
         tio.c_lflag &= ~(ICANON | ECHO);
