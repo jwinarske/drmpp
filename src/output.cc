@@ -19,6 +19,7 @@
 #include <cstring>
 
 #include "composition.h"
+#include "libliftoff.h"
 #include "logging/logging.h"
 #include "output.h"
 
@@ -148,8 +149,19 @@ bool Output::present(const Composition& composition) {
     flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
   }
 
+#ifndef NDEBUG
+  struct liftoff_output_apply_options options = {
+      .timeout_ns = 1000 * 1000 * 1000,  // 1s
+  };
+#else
+  struct liftoff_output_apply_options options = {
+      // 1ms, same as the internal libliftoff default.
+      .timeout_ns = 1 * 1000 * 1000,
+  };
+#endif
+
   /// TODO: Add composition layer.
-  int ok = ::liftoff_output_apply(output_.get(), req.get(), flags, nullptr);
+  int ok = ::liftoff_output_apply(output_.get(), req.get(), flags, &options);
   if (ok < 0) {
     LOG_ERROR("Plane allocation failed. liftoff_output_apply: {}",
               std::strerror(-ok));
