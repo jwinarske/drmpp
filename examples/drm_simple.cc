@@ -28,6 +28,7 @@
 #include "utils/virtual_terminal.h"
 
 struct Configuration {
+  bool quit = false;
 };
 
 static volatile bool gRunning = true;
@@ -50,112 +51,40 @@ void handle_signal(const int signal) {
 }
 
 class App final : public drmpp::utils::VirtualTerminal {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
+ public:
+  explicit App(const Configuration& config)
+      : logging_(std::make_unique<Logging>()), config_(config) {}
 
   ~App() override = default;
 
-  [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes()) {
-      const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
-      if (drm_fd < 0) {
-        LOG_ERROR("Failed to open {}", node.c_str());
-        return false;
+  [[nodiscard]] bool run() const {
+    for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
+      auto device = drmpp::Device::open(node);
+
+      auto output = device->openFirstConnectedOutput();
+
+      /// TODO: Maybe disable other CRTCs.
+
+      LOG_INFO("Using connector {}, CRTC {}", output->connector_id(),
+               output->crtc_id());
+
+      auto mode = output->mode();
+      LOG_INFO("Mode: {}x{}@{}Hz", mode.hdisplay, mode.vdisplay,
+               output->refreshRate());
+
+      output->present(generateFrame(*device, mode.hdisplay, mode.vdisplay));
+
+      if (!config_.quit) {
+        sleep(1);
       }
-
-      if (drm->SetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) < 0) {
-        LOG_ERROR("drmSetClientCap(ATOMIC)");
-        return false;
-      }
-
-      const auto device = liftoff_device_create(drm_fd);
-      if (device == nullptr) {
-        LOG_ERROR("liftoff_device_create");
-        return false;
-      }
-
-      liftoff_device_register_all_planes(device);
-
-      const auto drm_res = drm->ModeGetResources(drm_fd);
-
-      const auto connector =
-          drmpp::plane::Common::pick_connector(drm_fd, drm_res);
-      if (connector == nullptr) {
-        LOG_ERROR("no connector found");
-        return false;
-      }
-
-      const auto crtc =
-          drmpp::plane::Common::pick_crtc(drm_fd, drm_res, connector);
-      if (crtc == nullptr || !crtc->mode_valid) {
-        LOG_ERROR("no CRTC found");
-        return false;
-      }
-
-      drmpp::plane::Common::disable_all_crtcs_except(drm_fd, drm_res,
-                                                     crtc->crtc_id);
-
-      const auto output = liftoff_output_create(device, crtc->crtc_id);
-
-      drm->ModeFreeResources(drm_res);
-
-      LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
-               crtc->crtc_id);
-
-      liftoff_layer *layers[kLayersLen];
-      layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
-                            crtc->mode.vdisplay, false);
-      for (uint32_t i = 1; i < kLayersLen; i++) {
-        layers[i] = add_layer(drm_fd, output, UINT32_C(100) * i,
-                              UINT32_C(100) * i, 256, 256, i % 2);
-      }
-
-      for (uint32_t i = 0; i < kLayersLen; i++) {
-        liftoff_layer_set_property(layers[i], "zpos", i);
-      }
-
-      constexpr uint32_t flags = DRM_MODE_ATOMIC_NONBLOCK;
-      const auto req = drm->ModeAtomicAlloc();
-      auto ret = liftoff_output_apply(output, req, flags, nullptr);
-      if (ret != 0) {
-        LOG_ERROR("liftoff_output_apply");
-        return false;
-      }
-
-      ret = drm->ModeAtomicCommit(drm_fd, req, flags, nullptr);
-      if (ret < 0) {
-        LOG_ERROR("drmModeAtomicCommit");
-        return false;
-      }
-
-      for (uint32_t i = 0; i < std::size(layers); i++) {
-        if (const auto plane = liftoff_layer_get_plane(layers[i]);
-          plane != nullptr) {
-          LOG_INFO("Layer {} got assigned to plane {}", i,
-                   liftoff_plane_get_id(plane));
-        } else {
-          LOG_INFO("Layer {} has no plane assigned", i);
-        }
-      }
-
-      sleep(1);
-
-      drm->ModeAtomicFree(req);
-      for (auto &layer: layers) {
-        liftoff_layer_destroy(layer);
-      }
-      liftoff_output_destroy(output);
-      drm->ModeFreeCrtc(crtc);
-      drm->ModeFreeConnector(connector);
-      liftoff_device_destroy(device);
     }
+
     return false;
   }
 
 private:
   std::unique_ptr<Logging> logging_;
+  const Configuration config_;
 
   static constexpr uint32_t kLayersLen = UINT32_C(4);
 
@@ -167,27 +96,39 @@ private:
     0xFFFFFF00, /* yellow */
   };
 
-  static liftoff_layer *add_layer(const int drm_fd,
-                                  liftoff_output *output,
-                                  const int x,
-                                  const int y,
-                                  const uint32_t width,
-                                  const uint32_t height,
-                                  const bool with_alpha) {
+  static void add_layer(drmpp::Device& device,
+                        drmpp::Composition& composition,
+                        int x,
+                        int y,
+                        uint32_t width,
+                        uint32_t height,
+                        bool with_alpha) {
     static bool first = true;
     static size_t color_idx = 0;
-    drmpp::plane::Common::dumb_fb fb{};
-    uint32_t color;
-    liftoff_layer *layer{};
 
-    if (!drmpp::plane::Common::dumb_fb_init(
-      &fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
-      width, height)) {
-      LOG_ERROR("failed to create framebuffer");
-      return nullptr;
+    std::shared_ptr<drmpp::Buffer> fb_shared;
+    {
+      uint64_t modifier = DRM_FORMAT_MOD_INVALID;
+
+      // If we can, explicitly specify a linear layout
+      if (device.supportsModifiers()) {
+        modifier = DRM_FORMAT_MOD_LINEAR;
+      }
+
+      auto fb = device.createDumbBuffer(
+          width, height, 32,
+          with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888, modifier);
+      if (!fb) {
+        LOG_ERROR("Failed to create dumb buffer");
+        return;
+      }
+
+      fb_shared = std::move(fb);
     }
-    LOG_INFO("Created FB {} with size {}x{}", fb.id, width, height);
 
+    LOG_INFO("Created dumb buffer with size {}x{}", width, height);
+
+    uint32_t color;
     if (first) {
       color = 0xFFFFFFFF;
       first = false;
@@ -196,40 +137,55 @@ private:
       color_idx = (color_idx + 1) % std::size(kColors);
     }
 
-    drmpp::plane::Common::dumb_fb_fill(&fb, drm_fd, color);
+    fb_shared->fill(color);
 
-    layer = liftoff_layer_create(output);
-    liftoff_layer_set_property(layer, "FB_ID", fb.id);
-    liftoff_layer_set_property(layer, "CRTC_X", static_cast<uint64_t>(x));
-    liftoff_layer_set_property(layer, "CRTC_Y", static_cast<uint64_t>(y));
-    liftoff_layer_set_property(layer, "CRTC_W", width);
-    liftoff_layer_set_property(layer, "CRTC_H", height);
-    liftoff_layer_set_property(layer, "SRC_X", 0);
-    liftoff_layer_set_property(layer, "SRC_Y", 0);
-    liftoff_layer_set_property(layer, "SRC_W", width << 16);
-    liftoff_layer_set_property(layer, "SRC_H", height << 16);
+    const auto layer = drmpp::Composition::Layer{
+        fb_shared,
+        {0, 0, width, height},
+        {static_cast<uint32_t>(x), static_cast<uint32_t>(y), width, height},
+    };
 
-    return layer;
+    composition.addLayer(layer);
+  }
+
+  static drmpp::Composition generateFrame(drmpp::Device& device,
+                                               int width,
+                                               int height) {
+    drmpp::Composition composition;
+
+    add_layer(device, composition, 0, 0, width, height, false);
+    for (uint32_t i = 1; i < kLayersLen; i++) {
+      add_layer(device, composition, UINT32_C(100) * i, UINT32_C(100) * i, 256,
+                256, i % 2);
+    }
+
+    return composition;
   }
 };
 
 int main(const int argc, char **argv) {
   std::signal(SIGINT, handle_signal);
 
+  liftoff_log_set_priority(LIFTOFF_DEBUG);
+
   cxxopts::Options options("drm-simple", "Simple DRM example");
   options.set_width(80)
       .set_tab_expansion()
       .allow_unrecognised_options()
-      .add_options()("help", "Print help");
+      .add_options()("help", "Print help")(
+          "quit", "Quit directly after applying the commit.");
 
-  if (options.parse(argc, argv).count("help")) {
+  const auto parsed = options.parse(argc, argv);
+  if (parsed.count("help")) {
     spdlog::info("{}", options.help({"", "Group"}));
     exit(EXIT_SUCCESS);
   }
 
-  const App app({});
+  App app({
+      .quit = !!parsed.count("quit"),
+  });
 
-  (void) App::run();
+  (void)app.run();
 
   return EXIT_SUCCESS;
 }
