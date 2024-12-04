@@ -61,6 +61,7 @@ LibDrmExports::LibDrmExports(void* lib) {
     GetFuncAddress(lib, "drmModeFreeObjectProperties",
                    &ModeFreeObjectProperties);
     GetFuncAddress(lib, "drmModeCreatePropertyBlob", &ModeCreatePropertyBlob);
+    GetFuncAddress(lib, "drmModeDestroyPropertyBlob", &ModeDestroyPropertyBlob);
     GetFuncAddress(lib, "drmModeObjectGetProperties", &ModeObjectGetProperties);
     GetFuncAddress(lib, "drmModeGetResources", &ModeGetResources);
     GetFuncAddress(lib, "drmModeFreeResources", &ModeFreeResources);

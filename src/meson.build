@@ -51,9 +51,9 @@ drmpp_sources = [
     'input/fastlz.cc',
     'info/info.cc',
     'plane/plane.cc',
-    'egl/libegl.cc',
-    'drm/libdrm.cc',
-    'gbm/libgbm.cc',
+    'shared_libs/libdrm.cc',
+    'shared_libs/libegl.cc',
+    'shared_libs/libgbm.cc',
     'utils/virtual_terminal.cc',
 ]
 
