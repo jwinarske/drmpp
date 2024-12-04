@@ -161,14 +161,11 @@ namespace drmpp::input {
     }
   }
 
-void Pointer::handle_pointer_motion_absolute_event(libinput_event_pointer* ev) {
-  std::scoped_lock lock(observers_mutex_);
-
-  const auto ndc_x = libinput_event_pointer_get_absolute_x_transformed(ev, 1);
-  const auto ndc_y = libinput_event_pointer_get_absolute_y_transformed(ev, 1);
-  for (const auto observer : observers_) {
-    observer->notify_pointer_motion_absolute(this, 0, ndc_x, ndc_y);
+  void Pointer::handle_pointer_motion_absolute_event(libinput_event_pointer *ev) {
+    std::scoped_lock lock(observers_mutex_);
+    // TODO needs to reference surface size
+    LOG_INFO("motion absolute: x: {}, y: {}",
+             libinput_event_pointer_get_absolute_x_transformed(ev, 1024),
+             libinput_event_pointer_get_absolute_y_transformed(ev, 768));
   }
-}
-
-}  // namespace drmpp::input
+} // namespace drmpp::input
