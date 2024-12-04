@@ -30,12 +30,7 @@ extern "C" {
 #include <libliftoff.h>
 }
 
-#include "buffer.h"
-#include "composition.h"
 #include "cursor/xcursor.h"
-#include "device.h"
-#include "output.h"
-
 #include "info/info.h"
 #include "input/keyboard.h"
 #include "input/pointer.h"

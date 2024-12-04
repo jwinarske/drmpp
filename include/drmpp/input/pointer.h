@@ -39,32 +39,18 @@ namespace drmpp::input {
     virtual ~PointerObserver() = default;
 
     /**
-     * \brief Notify the observer of a relative pointer motion event.
+     * \brief Notify the observer of a pointer motion event.
      *
      * \param pointer Pointer to the Pointer instance.
      * \param time The time of the event.
-     * \param sx The delta of the x-coordinate of the pointer.
-     * \param sy The delta of the y-coordinate of the pointer.
+     * \param sx The x-coordinate of the pointer.
+     * \param sy The y-coordinate of the pointer.
      */
     virtual void notify_pointer_motion(Pointer *pointer,
                                        uint32_t time,
                                        double sx,
                                        double sy) = 0;
 
-    /**
-     * \brief Notify the observer of an absolute pointer motion event.
-     *
-     * \param pointer Pointer to the Pointer instance.
-     * \param time The time of the event.
-     * \param ndc_x The normalized device x-coordinate of the pointer. (normalized
-     * device coordinates: range 0 to 1)
-     * \param ndc_y The normalized device y-coordinate of the pointer.
-     */
-    virtual void notify_pointer_motion_absolute(Pointer* pointer,
-                                                uint32_t time,
-                                                double ndc_x,
-                                                double ndc_y) = 0;
-                                                
     /**
      * \brief Notify the observer of a pointer button event.
      *

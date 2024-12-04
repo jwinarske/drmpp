@@ -122,9 +122,7 @@ rapidjson::Value DrmInfo::driver_info(
       {"ATOMIC", DRM_CLIENT_CAP_ATOMIC},
       {"ASPECT_RATIO", DRM_CLIENT_CAP_ASPECT_RATIO},
       {"WRITEBACK_CONNECTORS", DRM_CLIENT_CAP_WRITEBACK_CONNECTORS},
-#ifdef DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT
       {"CURSOR_PLANE_HOTSPOT", DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT},
-#endif
   };
 
   // A map to store the general capabilities (name to DRM_CAP constant)
@@ -143,9 +141,7 @@ rapidjson::Value DrmInfo::driver_info(
       {"CRTC_IN_VBLANK_EVENT", DRM_CAP_CRTC_IN_VBLANK_EVENT},
       {"SYNCOBJ", DRM_CAP_SYNCOBJ},
       {"SYNCOBJ_TIMELINE", DRM_CAP_SYNCOBJ_TIMELINE},
-#ifdef DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP
       {"ATOMIC_ASYNC_PAGE_FLIP", DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP},
-#endif
   };
 
   drmVersion* ver = drm->GetVersion(fd);
