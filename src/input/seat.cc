@@ -125,10 +125,6 @@ bool Seat::run_once() {
       case LIBINPUT_EVENT_DEVICE_ADDED: {
         const auto name = libinput_device_get_name(dev);
 
-        if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_TOUCH)) {
-          capabilities_ |= SeatObserver::SEAT_CAPABILITIES_TOUCH;
-          DLOG_TRACE("Added Touch: {}", name);
-        }
         if (libinput_device_has_capability(dev, LIBINPUT_DEVICE_CAP_SWITCH)) {
           capabilities_ |= SeatObserver::SEAT_CAPABILITIES_SWITCH;
           DLOG_TRACE("Added Switch: {}", name);
@@ -242,6 +238,21 @@ bool Seat::run_once() {
             libinput_event_get_pointer_event(ev));
         break;
       }
+      case LIBINPUT_EVENT_TOUCH_UP:
+        touch_->handle_touch_up(libinput_event_get_touch_event(ev));
+        break;
+      case LIBINPUT_EVENT_TOUCH_DOWN:
+        touch_->handle_touch_down(libinput_event_get_touch_event(ev));
+        break;
+      case LIBINPUT_EVENT_TOUCH_FRAME:
+        touch_->handle_touch_frame(libinput_event_get_touch_event(ev));
+        break;
+      case LIBINPUT_EVENT_TOUCH_CANCEL:
+        touch_->handle_touch_cancel(libinput_event_get_touch_event(ev));
+        break;
+      case LIBINPUT_EVENT_TOUCH_MOTION:
+        touch_->handle_touch_motion(libinput_event_get_touch_event(ev));
+        break;
       default: {
         LOG_INFO("Event Type: {}", static_cast<int>(type));
         break;
