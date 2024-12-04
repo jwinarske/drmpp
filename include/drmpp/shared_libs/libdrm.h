@@ -124,6 +124,8 @@ struct LibDrmExports {
                                            size_t size,
                                            uint32_t* id);
 
+  typedef int (*DrmModeDestroyPropertyBlob)(int fd, uint32_t id);
+
   typedef drmModeObjectPropertiesPtr (*DrmModeObjectGetProperties)(
       int fd,
       uint32_t object_id,
@@ -201,6 +203,7 @@ struct LibDrmExports {
   DrmModeFreePropertyBlob ModeFreePropertyBlob = nullptr;
   DrmModeFreeObjectProperties ModeFreeObjectProperties = nullptr;
   DrmModeCreatePropertyBlob ModeCreatePropertyBlob = nullptr;
+  DrmModeDestroyPropertyBlob ModeDestroyPropertyBlob = nullptr;
   DrmModeObjectGetProperties ModeObjectGetProperties = nullptr;
   DrmModeGetResources ModeGetResources = nullptr;
   DrmModeFreeResources ModeFreeResources = nullptr;
