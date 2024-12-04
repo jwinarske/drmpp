@@ -23,42 +23,22 @@
 
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "utils/utils.h"
-#include "utils/virtual_terminal.h"
+#include "drmpp/input/seat.h"
+#include "drmpp/utils/utils.h"
+#include "drmpp/utils/virtual_terminal.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
-
-class App final : public drmpp::utils::VirtualTerminal {
-public:
-  explicit App(const Configuration & /* config */)
-    : logging_(std::make_unique<Logging>()) {
-  }
+class App final : public Logging, public drmpp::utils::VirtualTerminal {
+ public:
+  explicit App(const Configuration& /* config */) {}
 
   ~App() override = default;
 
   [[nodiscard]] static bool run() {
-    for (const auto &node: drmpp::utils::get_enabled_drm_nodes()) {
+    for (const auto& node : drmpp::utils::get_enabled_drm_nodes()) {
       const auto drm_fd = open(node.c_str(), O_RDWR | O_CLOEXEC);
       if (drm_fd < 0) {
         LOG_ERROR("Failed to open {}", node.c_str());
@@ -104,7 +84,7 @@ public:
       LOG_INFO("Using connector {}, CRTC {}", connector->connector_id,
                crtc->crtc_id);
 
-      liftoff_layer *layers[kLayersLen];
+      liftoff_layer* layers[kLayersLen];
       layers[0] = add_layer(drm_fd, output, 0, 0, crtc->mode.hdisplay,
                             crtc->mode.vdisplay, false);
       for (uint32_t i = 1; i < kLayersLen; i++) {
@@ -132,7 +112,7 @@ public:
 
       for (uint32_t i = 0; i < std::size(layers); i++) {
         if (const auto plane = liftoff_layer_get_plane(layers[i]);
-          plane != nullptr) {
+            plane != nullptr) {
           LOG_INFO("Layer {} got assigned to plane {}", i,
                    liftoff_plane_get_id(plane));
         } else {
@@ -143,7 +123,7 @@ public:
       sleep(1);
 
       drm->ModeAtomicFree(req);
-      for (auto &layer: layers) {
+      for (auto& layer : layers) {
         liftoff_layer_destroy(layer);
       }
       liftoff_output_destroy(output);
@@ -154,21 +134,19 @@ public:
     return false;
   }
 
-private:
-  std::unique_ptr<Logging> logging_;
-
+ private:
   static constexpr uint32_t kLayersLen = UINT32_C(4);
 
   /* ARGB 8:8:8:8 */
   static constexpr uint32_t kColors[] = {
-    0xFFFF0000, /* red */
-    0xFF00FF00, /* green */
-    0xFF0000FF, /* blue */
-    0xFFFFFF00, /* yellow */
+      0xFFFF0000, /* red */
+      0xFF00FF00, /* green */
+      0xFF0000FF, /* blue */
+      0xFFFFFF00, /* yellow */
   };
 
-  static liftoff_layer *add_layer(const int drm_fd,
-                                  liftoff_output *output,
+  static liftoff_layer* add_layer(const int drm_fd,
+                                  liftoff_output* output,
                                   const int x,
                                   const int y,
                                   const uint32_t width,
@@ -178,11 +156,11 @@ private:
     static size_t color_idx = 0;
     drmpp::plane::Common::dumb_fb fb{};
     uint32_t color;
-    liftoff_layer *layer{};
+    liftoff_layer* layer{};
 
     if (!drmpp::plane::Common::dumb_fb_init(
-      &fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
-      width, height)) {
+            &fb, drm_fd, with_alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
+            width, height)) {
       LOG_ERROR("failed to create framebuffer");
       return nullptr;
     }
@@ -213,8 +191,12 @@ private:
   }
 };
 
-int main(const int argc, char **argv) {
-  std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   cxxopts::Options options("drm-simple", "Simple DRM example");
   options.set_width(80)
@@ -229,7 +211,7 @@ int main(const int argc, char **argv) {
 
   const App app({});
 
-  (void) App::run();
+  (void)App::run();
 
   return EXIT_SUCCESS;
 }

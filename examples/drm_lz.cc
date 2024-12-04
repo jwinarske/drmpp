@@ -19,11 +19,11 @@
 #include <fstream>
 #include <iostream>
 
-#include <input/fastlz.h>
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "utils/utils.h"
+#include "drmpp/input/fastlz.h"
+#include "drmpp/input/seat.h"
+#include "drmpp/utils/utils.h"
 
 struct Configuration {
   std::string keymap_path;
@@ -32,35 +32,16 @@ struct Configuration {
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
+class App final : public Logging {
+ public:
+  explicit App(const Configuration& config) : config_(config) {}
 
-class App {
-public:
-  explicit App(const Configuration &config)
-    : logging_(std::make_unique<Logging>()), config_(config) {
-  }
+  ~App() override = default;
 
-  ~App() = default;
-
-  static std::vector<uint8_t> create_buffer(std::ifstream &file,
+  static std::vector<uint8_t> create_buffer(std::ifstream& file,
                                             const std::size_t size) {
     std::vector<uint8_t> buffer(size);
-    if (!file.read(reinterpret_cast<char *>(buffer.data()),
+    if (!file.read(reinterpret_cast<char*>(buffer.data()),
                    static_cast<long>(buffer.size()))) {
       buffer.clear();
     }
@@ -68,7 +49,7 @@ public:
   }
 
   static std::optional<std::ifstream> read_file_content(
-    const std::filesystem::path &path) {
+      const std::filesystem::path& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
       LOG_ERROR("[{}] Failed to open", path.c_str());
@@ -77,7 +58,7 @@ public:
     return file;
   }
 
-  static bool is_valid_file_path(const std::filesystem::path &path) {
+  static bool is_valid_file_path(const std::filesystem::path& path) {
     if (path.empty() || !exists(path)) {
       return false;
     }
@@ -85,13 +66,13 @@ public:
   }
 
   static std::vector<uint8_t> return_error_message_and_buffer(
-    const std::filesystem::path &path,
-    const std::string &message) {
+      const std::filesystem::path& path,
+      const std::string& message) {
     LOG_ERROR("[{}] {}", path.c_str(), message);
     return {};
   }
 
-  static std::vector<uint8_t> read_binary_file(const std::string &file_path) {
+  static std::vector<uint8_t> read_binary_file(const std::string& file_path) {
     if (!is_valid_file_path(file_path)) {
       return return_error_message_and_buffer(file_path, "Invalid path");
     }
@@ -101,7 +82,7 @@ public:
       return return_error_message_and_buffer(file_path, "Failed to open");
     }
 
-    std::ifstream &file = optionalFile.value();
+    std::ifstream& file = optionalFile.value();
     const auto end = file.tellg();
     file.seekg(0, std::ios::beg);
     const auto size = static_cast<std::size_t>(end - file.tellg());
@@ -119,7 +100,7 @@ public:
     return buffer;
   }
 
-  static bool get_asset_header(const std::string &asset) {
+  static bool get_asset_header(const std::string& asset) {
     LOG_INFO("** {} **", asset.c_str());
     const auto buff = read_binary_file(asset);
     if (buff.empty()) {
@@ -129,10 +110,10 @@ public:
     std::stringstream ss;
     const auto buffer_size =
         std::round(1.05 * static_cast<double>(buff.size()));
-    auto *compressed_buffer =
-        static_cast<uint8_t *>(malloc(static_cast<std::size_t>(buffer_size)));
+    auto* compressed_buffer =
+        static_cast<uint8_t*>(malloc(static_cast<std::size_t>(buffer_size)));
     int compressed_size = fastlz_compress_level(
-      1, buff.data(), static_cast<int>(buff.size()), compressed_buffer);
+        1, buff.data(), static_cast<int>(buff.size()), compressed_buffer);
     double ratio1 =
         (100.0 * compressed_size) / static_cast<double>(buff.size());
     ss.clear();
@@ -158,13 +139,16 @@ public:
     return false;
   }
 
-private:
-  std::unique_ptr<Logging> logging_;
-  const Configuration &config_;
+ private:
+  const Configuration& config_;
 };
 
-int main(const int argc, char **argv) {
-  std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   Configuration config{};
   cxxopts::Options options("drm-lz", "Generate compressed header content");
@@ -172,10 +156,10 @@ int main(const int argc, char **argv) {
       .set_tab_expansion()
       .allow_unrecognised_options()
       .add_options()("help", "Print help")(
-        "k,keymap", "Path to keymap file",
-        cxxopts::value<std::string>(config.keymap_path))(
-        "c,cursor", "Path to left_ptr (default) cursor file",
-        cxxopts::value<std::string>(config.left_ptr_cursor_path));
+          "k,keymap", "Path to keymap file",
+          cxxopts::value<std::string>(config.keymap_path))(
+          "c,cursor", "Path to left_ptr (default) cursor file",
+          cxxopts::value<std::string>(config.left_ptr_cursor_path));
   const auto result = options.parse(argc, argv);
 
   if (result.count("help")) {

@@ -20,6 +20,11 @@ rapidjson_dep = declare_dependency(include_directories : include_directories('..
 
 cmake = import('cmake')
 
+if get_option('vulkan')
+    vulkan_headers = cmake.subproject('Vulkan-Headers')
+    vulkan_headers_dep = vulkan_headers.dependency('Vulkan-Headers')
+endif
+
 opt_var = cmake.subproject_options()
 opt_var.add_cmake_defines({ 'CMAKE_VERBOSE_MAKEFILE' : true })
 opt_var.add_cmake_defines({ 'SPDLOG_NO_EXCEPTIONS' : true })
@@ -30,12 +35,15 @@ spdlog = cmake.subproject('spdlog', options : opt_var)
 spdlog_dep = spdlog.dependency('spdlog')
 
 incdirs = [
+    '../include',
     '../include/drmpp',
     config_inc
 ]
 
 drmpp_sources = [
     'cursor/xcursor.cc',
+    'kms/device.cc',
+    'kms/output.cc',
     'input/seat.cc',
     'input/keyboard.cc',
     'input/pointer.cc',
@@ -49,36 +57,35 @@ drmpp_sources = [
     'utils/virtual_terminal.cc',
 ]
 
+drmp_dep_deps = [
+    di_dep,
+    input_dep,
+    liftoff_dep,
+    rapidjson_dep,
+    spdlog_dep,
+    gbm_dep,
+    drm_dep,
+    udev_dep,
+    xkbcommon_dep,
+    runtime,
+    dl,
+]
+
+if get_option('vulkan')
+    drmpp_sources += 'vulkan/vulkan_base.cc'
+    drmpp_sources += 'vulkan/vulkan_khr.cc'
+    drmpp_sources += 'vulkan/vulkan_kms.cc'
+    drmp_dep_deps += vulkan_headers_dep
+endif
+
 drmpp_lib = library('drmpp',
                     drmpp_sources,
                     #                    cpp_args : ['-DHAVE_GETFB2'],
                     include_directories : incdirs,
-                    dependencies : [
-                        di_dep,
-                        input_dep,
-                        liftoff_dep,
-                        rapidjson_dep,
-                        spdlog_dep,
-                        gbm_dep,
-                        drm_dep,
-                        udev_dep,
-                        xkbcommon_dep,
-                        runtime,
-                        dl,
-                    ],
+                    dependencies : drmp_dep_deps,
                     install : true)
+
 
 drmp_dep = declare_dependency(link_with : drmpp_lib,
                               include_directories : incdirs,
-                              dependencies : [
-                                  di_dep,
-                                  input_dep,
-                                  liftoff_dep,
-                                  rapidjson_dep,
-                                  spdlog_dep,
-                                  gbm_dep,
-                                  drm_dep,
-                                  udev_dep,
-                                  xkbcommon_dep,
-                                  runtime
-                              ])
+                              dependencies : drmp_dep_deps)

@@ -23,7 +23,7 @@ template <size_t CompressedSize, size_t UncompressedSize>
 struct Asset {
   size_t compressed_size = CompressedSize;
   size_t uncompressed_size = UncompressedSize;
-  uint8_t data[CompressedSize];
+  uint8_t data[CompressedSize]{};
 };
 
 #endif  // INCLUDE_DRMPP_INPUT_ASSET_H

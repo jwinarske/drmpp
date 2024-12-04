@@ -8,7 +8,6 @@
 #include "snake.h"
 
 #include <climits>
-#include <cstdlib>
 #include <cstring>
 
 #define THREE_BITS 0x7U  // ~CHAR_MAX >> (CHAR_BIT - SNAKE_CELL_MAX_BITS)

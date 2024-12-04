@@ -41,8 +41,9 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include "drmpp.h"
+#include "logging/logging.h"
 #include "shared_libs/libdrm.h"
+#include "utils/utils.h"
 
 namespace drmpp::info {
 

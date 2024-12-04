@@ -25,41 +25,24 @@ extern "C" {
 #include <libdisplay-info/info.h>
 }
 
-#include <info/info.h>
-#include <input/keyboard.h>
 #include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "shared_libs/libdrm.h"
-#include "utils/utils.h"
-#include "utils/virtual_terminal.h"
+#include "drmpp/info/info.h"
+#include "drmpp/input/keyboard.h"
+#include "drmpp/input/seat.h"
+#include "drmpp/shared_libs/libdrm.h"
+#include "drmpp/utils/utils.h"
+#include "drmpp/utils/virtual_terminal.h"
 
 struct Configuration {};
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
-
-class App final : public drmpp::input::KeyboardObserver,
+class App final : public Logging,
+                  public drmpp::input::KeyboardObserver,
                   public drmpp::input::SeatObserver {
  public:
-  explicit App(const Configuration& /*config */)
-      : logging_(std::make_unique<Logging>()) {
+  explicit App(const Configuration& /*config */) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
@@ -318,13 +301,16 @@ class App final : public drmpp::input::KeyboardObserver,
   }
 
  private:
-  std::unique_ptr<Logging> logging_;
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
 int main(const int argc, char** argv) {
-  std::signal(SIGINT, handle_signal);
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   cxxopts::Options options("drm-input", "Input information");
   options.set_width(80)

@@ -27,6 +27,18 @@ struct LibDrmExports {
 
   typedef int (*DrmIoctl)(int fd, unsigned long request, void* arg);
 
+  typedef int (*DrmGetDevice2)(int fd, uint32_t flags, drmDevicePtr* device);
+
+  typedef int (*DrmGetDevices2)(uint32_t flags,
+                                drmDevicePtr devices[],
+                                int max_devices);
+
+  typedef void (*DrmFreeDevices)(drmDevicePtr devices[], int count);
+
+  typedef int (*DrmGetMagic)(int fd, drm_magic_t* magic);
+
+  typedef int (*DrmAuthMagic)(int fd, drm_magic_t magic);
+
   typedef drmVersionPtr (*DrmGetVersion)(int fd);
 
   typedef void (*DrmFreeVersion)(drmVersionPtr);
@@ -157,7 +169,11 @@ struct LibDrmExports {
 
   DrmIoctl Ioctl = nullptr;
   DrmSetClientCap SetClientCap = nullptr;
-
+  DrmGetDevice2 GetDevice2 = nullptr;
+  DrmGetDevices2 GetDevices2 = nullptr;
+  DrmFreeDevices FreeDevices = nullptr;
+  DrmGetMagic GetMagic = nullptr;
+  DrmAuthMagic AuthMagic = nullptr;
   DrmModeGetConnectorCurrent ModeGetConnectorCurrent = nullptr;
   DrmModeGetConnector ModeGetConnector = nullptr;
   DrmModeFreeConnector ModeFreeConnector = nullptr;

@@ -19,41 +19,22 @@
 #include <fstream>
 #include <iostream>
 
-#include <cxxopts.hpp>
 #include <utils/virtual_terminal.h>
+#include <cxxopts.hpp>
 
-#include "drmpp.h"
-#include "shared_libs/libdrm.h"
-#include "shared_libs/libgbm.h"
+#include "drmpp/input/seat.h"
+#include "drmpp/shared_libs/libdrm.h"
 
-struct Configuration {
-};
+struct Configuration {};
 
 static volatile bool gRunning = true;
 
-/**
- * @brief Signal handler function to handle signals.
- *
- * This function is a signal handler for handling signals. It sets the value of
- * keep_running to false, which will stop the program from running. The function
- * does not take any input parameters.
- *
- * @param signal The signal number. This parameter is not used by the function.
- *
- * @return void
- */
-void handle_signal(const int signal) {
-  if (signal == SIGINT) {
-    gRunning = false;
-  }
-}
-
-class App final : public drmpp::input::KeyboardObserver,
+class App final : public Logging,
+                  public drmpp::input::KeyboardObserver,
                   public drmpp::input::PointerObserver,
                   public drmpp::input::SeatObserver {
-public:
-  explicit App(const Configuration & /*config */)
-    : logging_(std::make_unique<Logging>()) {
+ public:
+  explicit App(const Configuration& /*config */) {
     seat_ = std::make_unique<drmpp::input::Seat>(false, "");
     seat_->register_observer(this, this);
   }
@@ -62,7 +43,7 @@ public:
 
   [[nodiscard]] bool run() const { return seat_->run_once(); }
 
-  void notify_seat_capabilities(drmpp::input::Seat *seat,
+  void notify_seat_capabilities(drmpp::input::Seat* seat,
                                 uint32_t caps) override {
     LOG_INFO("Seat Capabilities: {}", caps);
     if (caps & SEAT_CAPABILITIES_POINTER) {
@@ -72,8 +53,8 @@ public:
     }
     if (caps & SEAT_CAPABILITIES_KEYBOARD) {
       if (const auto keyboards = seat_->get_keyboards();
-        keyboards.has_value()) {
-        for (auto const &keyboard: *keyboards.value()) {
+          keyboards.has_value()) {
+        for (auto const& keyboard : *keyboards.value()) {
           keyboard->register_observer(this, this);
         }
       }
@@ -81,13 +62,13 @@ public:
   }
 
   void notify_keyboard_xkb_v1_key(
-    drmpp::input::Keyboard *keyboard,
-    uint32_t time,
-    uint32_t xkb_scancode,
-    bool keymap_key_repeats,
-    const uint32_t state,
-    int xdg_key_symbol_count,
-    const xkb_keysym_t *xdg_key_symbols) override {
+      drmpp::input::Keyboard* keyboard,
+      uint32_t time,
+      uint32_t xkb_scancode,
+      bool keymap_key_repeats,
+      const uint32_t state,
+      int xdg_key_symbol_count,
+      const xkb_keysym_t* xdg_key_symbols) override {
     if (state == LIBINPUT_KEY_STATE_PRESSED) {
       if (xdg_key_symbols[0] == XKB_KEY_Escape ||
           xdg_key_symbols[0] == XKB_KEY_q || xdg_key_symbols[0] == XKB_KEY_Q) {
@@ -101,21 +82,21 @@ public:
       }
     }
     LOG_INFO(
-      "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
-      "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
-      time, xkb_scancode, keymap_key_repeats,
-      state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
-      xdg_key_symbol_count, xdg_key_symbols[0]);
+        "Key: time: {}, xkb_scancode: 0x{:X}, key_repeats: {}, state: {}, "
+        "xdg_keysym_count: {}, syms_out[0]: 0x{:X}",
+        time, xkb_scancode, keymap_key_repeats,
+        state == LIBINPUT_KEY_STATE_PRESSED ? "press" : "release",
+        xdg_key_symbol_count, xdg_key_symbols[0]);
   }
 
-  void notify_pointer_motion(drmpp::input::Pointer *pointer,
+  void notify_pointer_motion(drmpp::input::Pointer* pointer,
                              uint32_t time,
                              double sx,
                              double sy) override {
     LOG_TRACE("x: {}, y: {}", sx, sy);
   }
 
-  void notify_pointer_button(drmpp::input::Pointer *pointer,
+  void notify_pointer_button(drmpp::input::Pointer* pointer,
                              uint32_t serial,
                              uint32_t time,
                              uint32_t button,
@@ -123,42 +104,45 @@ public:
     LOG_INFO("button: {}, state: {}", button, state);
   }
 
-  void notify_pointer_axis(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis(drmpp::input::Pointer* pointer,
                            uint32_t time,
                            uint32_t axis,
                            double value) override {
     LOG_INFO("axis: {}", axis);
   }
 
-  void notify_pointer_frame(drmpp::input::Pointer *pointer) override {
+  void notify_pointer_frame(drmpp::input::Pointer* pointer) override {
     LOG_INFO("frame");
   }
 
-  void notify_pointer_axis_source(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_source(drmpp::input::Pointer* pointer,
                                   uint32_t axis_source) override {
     LOG_INFO("axis_source: {}", axis_source);
   }
 
-  void notify_pointer_axis_stop(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_stop(drmpp::input::Pointer* pointer,
                                 uint32_t time,
                                 uint32_t axis) override {
     LOG_INFO("axis_stop: {}", axis);
   }
 
-  void notify_pointer_axis_discrete(drmpp::input::Pointer *pointer,
+  void notify_pointer_axis_discrete(drmpp::input::Pointer* pointer,
                                     uint32_t axis,
                                     int32_t discrete) override {
     LOG_INFO("axis_discrete: axis: {}, discrete: {}", axis, discrete);
   }
 
-private:
-  std::unique_ptr<Logging> logging_;
+ private:
   std::unique_ptr<drmpp::input::Seat> seat_;
   std::mutex cmd_mutex_{};
 };
 
-int main(const int argc, char **argv) {
-  std::signal(SIGINT, handle_signal);
+int main(const int argc, char** argv) {
+  std::signal(SIGINT, [](const int signal) {
+    if (signal == SIGINT) {
+      gRunning = false;
+    }
+  });
 
   cxxopts::Options options("drm-cursor", "Render Cursor");
   options.set_width(80)
