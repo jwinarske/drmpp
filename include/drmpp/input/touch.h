@@ -20,6 +20,8 @@
 #include <list>
 #include <mutex>
 
+#include <libinput.h>
+
 namespace drmpp::input {
 class Touch;
 
@@ -34,9 +36,59 @@ class TouchObserver {
   virtual ~TouchObserver() = default;
 
   /**
-   * \brief Notify the observer of a touch event.
+   * \brief Notify the observer of a touch up event.
+   *
+   * \param touch Pointer to the Touch object.
+   * \param time Event time.
+   * \param x X coordinate of the touch.
+   * \param y Y coordinate of the touch.
    */
-  virtual void notify_touch() = 0;
+  virtual void notify_touch_up(Touch* touch,
+                               uint32_t time,
+                               double x,
+                               double y) = 0;
+
+  /**
+   * \brief Notify the observer of a touch down event.
+   *
+   * \param touch Pointer to the Touch object.
+   * \param time Event time.
+   * \param x X coordinate of the touch.
+   * \param y Y coordinate of the touch.
+   */
+  virtual void notify_touch_down(Touch* touch,
+                                 uint32_t time,
+                                 double x,
+                                 double y) = 0;
+
+  /**
+   * \brief Notify the observer of a touch frame event.
+   *
+   * \param touch Pointer to the Touch object.
+   * \param time Event time.
+   */
+  virtual void notify_touch_frame(Touch* touch, uint32_t time);
+
+  /**
+   * \brief Notify the observer of a touch cancel event.
+   *
+   * \param touch Pointer to the Touch object.
+   * \param time Event time.
+   */
+  virtual void notify_touch_cancel(Touch* touch, uint32_t time);
+
+  /**
+   * \brief Notify the observer of a touch motion event.
+   *
+   * \param touch Pointer to the Touch object.
+   * \param time Event time.
+   * \param sx X coordinate of the touch motion.
+   * \param sy Y coordinate of the touch motion.
+   */
+  virtual void notify_touch_motion(Touch* touch,
+                                   uint32_t time,
+                                   double sx,
+                                   double sy) = 0;
 };
 
 /**
@@ -107,6 +159,41 @@ class Touch {
    * \param event_mask The event mask to be set.
    */
   void set_event_mask(event_mask const& event_mask);
+
+  /**
+   * \brief Handles the touch up event.
+   *
+   * \param ev Pointer to the libinput event.
+   */
+  void handle_touch_up(libinput_event_touch* ev);
+
+  /**
+   * \brief Handles the touch down event.
+   *
+   * \param ev Pointer to the libinput event.
+   */
+  void handle_touch_down(libinput_event_touch* ev);
+
+  /**
+   * \brief Handles the touch frame event.
+   *
+   * \param ev Pointer to the libinput event.
+   */
+  void handle_touch_frame(libinput_event_touch* ev);
+
+  /**
+   * \brief Handles the touch cancel event.
+   *
+   * \param ev Pointer to the libinput event.
+   */
+  void handle_touch_cancel(libinput_event_touch* ev);
+
+  /**
+   * \brief Handles the touch motion event.
+   *
+   * \param ev Pointer to the libinput event.
+   */
+  void handle_touch_motion(libinput_event_touch* ev);
 
   // Disallow copy and assign.
   Touch(const Touch&) = delete;

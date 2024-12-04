@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <xf86drm.h>
 
-#include "drmpp/shared_libs/libdrm.h"
-#include "drmpp/shared_libs/libgbm.h"
+#include "shared_libs/libdrm.h"
+#include "shared_libs/libgbm.h"
 #include "kms/device.h"
 #include "logging/logging.h"
 

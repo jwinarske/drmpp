@@ -136,7 +136,8 @@ void Pointer::handle_pointer_button_event(libinput_event_pointer* ev) {
   std::scoped_lock lock(observers_mutex_);
   for (const auto observer : observers_) {
     observer->notify_pointer_button(
-        this, 0, 0, libinput_event_pointer_get_button(ev),
+        this, 0, libinput_event_pointer_get_time(ev),
+        libinput_event_pointer_get_button(ev),
         libinput_event_pointer_get_button_state(ev));
   }
 }
@@ -144,7 +145,8 @@ void Pointer::handle_pointer_button_event(libinput_event_pointer* ev) {
 void Pointer::handle_pointer_motion_event(libinput_event_pointer* ev) {
   std::scoped_lock lock(observers_mutex_);
   for (const auto observer : observers_) {
-    observer->notify_pointer_motion(this, 0, libinput_event_pointer_get_dx(ev),
+    observer->notify_pointer_motion(this, libinput_event_pointer_get_time(ev),
+                                    libinput_event_pointer_get_dx(ev),
                                     libinput_event_pointer_get_dy(ev));
   }
 }
@@ -159,9 +161,10 @@ void Pointer::handle_pointer_axis_event(libinput_event_pointer* ev) {
 
 void Pointer::handle_pointer_motion_absolute_event(libinput_event_pointer* ev) {
   std::scoped_lock lock(observers_mutex_);
-  // TODO needs to reference surface size
-  LOG_INFO("motion absolute: x: {}, y: {}",
-           libinput_event_pointer_get_absolute_x_transformed(ev, 1024),
-           libinput_event_pointer_get_absolute_y_transformed(ev, 768));
+  for (const auto observer : observers_) {
+    observer->notify_pointer_motion(this, libinput_event_pointer_get_time(ev),
+                                    libinput_event_pointer_get_absolute_x(ev),
+                                    libinput_event_pointer_get_absolute_y(ev));
+  }
 }
 }  // namespace drmpp::input
