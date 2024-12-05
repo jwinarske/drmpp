@@ -54,6 +54,7 @@ drmpp_sources = [
     'shared_libs/libdrm.cc',
     'shared_libs/libegl.cc',
     'shared_libs/libgbm.cc',
+    'utils/udev_monitor.cc',
     'utils/virtual_terminal.cc',
 ]
 

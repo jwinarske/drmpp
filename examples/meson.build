@@ -61,6 +61,7 @@ executable('drm-hotplug', ['drm_hotplug.cc'],
            dependencies : [
                cxxopts_dep,
                drmp_dep,
+               udev_dep,
            ],
            install : true,
 )
