@@ -29,7 +29,7 @@
 #include "drmpp/shared_libs/libgbm.h"
 #include "drmpp/utils/virtual_terminal.h"
 
-#include "snake/snake.h"
+#include "snake.h"
 
 struct Configuration {
   std::string device = "/dev/dri/card0";
