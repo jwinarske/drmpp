@@ -9,3 +9,9 @@ option('examples',
        value : true,
        description : 'build client examples'
 )
+
+option('lvgl-examples',
+       type : 'boolean',
+       value : true,
+       description : 'build LVGL examples'
+)

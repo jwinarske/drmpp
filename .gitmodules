@@ -16,3 +16,6 @@
 [submodule "subprojects/Vulkan-Headers"]
 	path = subprojects/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "subprojects/lvgl"]
+	path = subprojects/lvgl
+	url = https://github.com/lvgl/lvgl.git

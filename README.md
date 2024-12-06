@@ -20,6 +20,13 @@ You can create on a desktop machine running X11 or Wayland:
 
 Ignore any warnings
 
+### Frame buffer device access
+
+Add user to the video group
+
+    sudo adduser $USER video
+    newgrp video
+
 ### TTY Terminal
 
 The system compositor has control of the DRM driver when active.  You can suspend this access by switching to a TTY terminal.
