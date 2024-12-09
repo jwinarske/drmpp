@@ -27,6 +27,7 @@ executable('drm-gbm-lvgl', [
                drmp_dep,
                lvgl_dep,
                lvgl_thorvg_dep,
+               lvgl_demos_dep,
                gles_dep,
                egl_dep,
                dl_dep,
