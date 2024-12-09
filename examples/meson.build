@@ -100,7 +100,7 @@ executable('drm-lz', ['drm_lz.cc'],
                cxxopts_dep,
                drmp_dep,
            ],
-           install : false,
+           install : true,
 )
 
 executable('drm-gbm', ['drm_gbm.cc'],
@@ -113,7 +113,7 @@ executable('drm-gbm', ['drm_gbm.cc'],
                drmp_dep,
                gbm_dep,
            ],
-           install : false,
+           install : true,
 )
 
 subdir('snake')
