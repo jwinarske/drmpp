@@ -15,7 +15,6 @@
  */
 
 #include <fcntl.h>
-#include <src/core/lv_global.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -30,6 +29,8 @@
 
 extern "C" {
 #include "demos/lv_demos.h"
+#include "src/core/lv_global.h"
+#include "src/indev/lv_indev_private.h"
 }
 
 struct Configuration {
@@ -181,9 +182,11 @@ class App final : public Logging, public drmpp::utils::VirtualTerminal {
         egl_window_, texture_id, drm_.mode_info.hdisplay,
         drm_.mode_info.vdisplay);
 
-#if 0  // TODO mouse cursor
     // get the mouse index of the window texture
     lv_indev_t* mouse = lv_texture_get_mouse_indev(window_texture);
+    mouse->user_data = this;
+
+#if 0  // TODO mouse cursor
     LV_IMAGE_DECLARE(mouse_cursor_icon);
     lv_obj_t* cursor_obj = lv_image_create(lv_screen_active());
     lv_image_set_src(cursor_obj, &mouse_cursor_icon);
