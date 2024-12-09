@@ -32,5 +32,5 @@ executable('drm-gbm-lvgl', [
                egl_dep,
                dl_dep,
            ],
-           install : false,
+           install : true,
 )

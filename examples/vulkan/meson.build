@@ -8,7 +8,7 @@ executable('vk-khr-inp', [
                vulkan_headers_dep,
                dl_dep,
            ],
-           install : false,
+           install : true,
 )
 
 executable('vk-kms-inp', [
@@ -21,5 +21,5 @@ executable('vk-kms-inp', [
                vulkan_headers_dep,
                dl_dep,
            ],
-           install : false,
+           install : true,
 )

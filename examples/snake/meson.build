@@ -7,5 +7,5 @@ executable('drm-snake', ['drm_snake.cc', 'snake.cc'],
                drmp_dep,
                gbm_dep,
            ],
-           install : false,
+           install : true,
 )
