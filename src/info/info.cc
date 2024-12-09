@@ -118,31 +118,51 @@ rapidjson::Value DrmInfo::driver_info(
     const int fd,
     rapidjson::MemoryPoolAllocator<>& allocator) {
   std::map<const char*, uint64_t> client_caps = {
-      {"STEREO_3D", DRM_CLIENT_CAP_STEREO_3D},
-      {"UNIVERSAL_PLANES", DRM_CLIENT_CAP_UNIVERSAL_PLANES},
-      {"ATOMIC", DRM_CLIENT_CAP_ATOMIC},
-      {"ASPECT_RATIO", DRM_CLIENT_CAP_ASPECT_RATIO},
-      {"WRITEBACK_CONNECTORS", DRM_CLIENT_CAP_WRITEBACK_CONNECTORS},
-      {"CURSOR_PLANE_HOTSPOT", DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT},
+      {"STEREO_3D", DRM_CLIENT_CAP_STEREO_3D},                // kernel 3.4
+      {"UNIVERSAL_PLANES", DRM_CLIENT_CAP_UNIVERSAL_PLANES},  // kernel 3.15
+#ifdef DRM_CLIENT_CAP_ATOMIC
+      {"ATOMIC", DRM_CLIENT_CAP_ATOMIC},  // kernel 4.2
+#endif
+#ifdef DRM_CLIENT_CAP_ASPECT_RATIO
+      {"ASPECT_RATIO", DRM_CLIENT_CAP_ASPECT_RATIO},  // kernel 4.9
+#endif
+      {"WRITEBACK_CONNECTORS",
+       DRM_CLIENT_CAP_WRITEBACK_CONNECTORS},  // kernel 4.14
+#ifdef DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT
+      {"CURSOR_PLANE_HOTSPOT",
+       DRM_CLIENT_CAP_CURSOR_PLANE_HOTSPOT},  // kernel 5.13
+#endif
   };
 
   // A map to store the general capabilities (name to DRM_CAP constant)
   std::map<const char*, uint64_t> caps = {
-      {"DUMB_BUFFER", DRM_CAP_DUMB_BUFFER},
-      {"VBLANK_HIGH_CRTC", DRM_CAP_VBLANK_HIGH_CRTC},
-      {"DUMB_PREFERRED_DEPTH", DRM_CAP_DUMB_PREFERRED_DEPTH},
-      {"DUMB_PREFER_SHADOW", DRM_CAP_DUMB_PREFER_SHADOW},
-      {"PRIME", DRM_CAP_PRIME},
-      {"TIMESTAMP_MONOTONIC", DRM_CAP_TIMESTAMP_MONOTONIC},
-      {"ASYNC_PAGE_FLIP", DRM_CAP_ASYNC_PAGE_FLIP},
-      {"CURSOR_WIDTH", DRM_CAP_CURSOR_WIDTH},
-      {"CURSOR_HEIGHT", DRM_CAP_CURSOR_HEIGHT},
-      {"ADDFB2_MODIFIERS", DRM_CAP_ADDFB2_MODIFIERS},
-      {"PAGE_FLIP_TARGET", DRM_CAP_PAGE_FLIP_TARGET},
-      {"CRTC_IN_VBLANK_EVENT", DRM_CAP_CRTC_IN_VBLANK_EVENT},
-      {"SYNCOBJ", DRM_CAP_SYNCOBJ},
-      {"SYNCOBJ_TIMELINE", DRM_CAP_SYNCOBJ_TIMELINE},
-      {"ATOMIC_ASYNC_PAGE_FLIP", DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP},
+      {"DUMB_BUFFER", DRM_CAP_DUMB_BUFFER},                    // kernel 3.1
+      {"PRIME", DRM_CAP_PRIME},                                // kernel 3.3
+      {"DUMB_PREFERRED_DEPTH", DRM_CAP_DUMB_PREFERRED_DEPTH},  // kernel 3.8
+      {"TIMESTAMP_MONOTONIC", DRM_CAP_TIMESTAMP_MONOTONIC},    // kernel 3.8
+      {"ASYNC_PAGE_FLIP", DRM_CAP_ASYNC_PAGE_FLIP},            // kernel 3.8
+      {"DUMB_PREFER_SHADOW", DRM_CAP_DUMB_PREFER_SHADOW},      // kernel 3.9
+      {"VBLANK_HIGH_CRTC", DRM_CAP_VBLANK_HIGH_CRTC},          // kernel 3.10
+      {"CURSOR_WIDTH", DRM_CAP_CURSOR_WIDTH},                  // kernel 3.10
+      {"CURSOR_HEIGHT", DRM_CAP_CURSOR_HEIGHT},                // kernel 3.10
+#ifdef DRM_CAP_PAGE_FLIP_TARGET
+      {"PAGE_FLIP_TARGET", DRM_CAP_PAGE_FLIP_TARGET},  // kernel 4.8
+#endif
+#ifdef DRM_CAP_CRTC_IN_VBLANK_EVENT
+      {"CRTC_IN_VBLANK_EVENT", DRM_CAP_CRTC_IN_VBLANK_EVENT},  // kernel 4.12
+#endif
+#ifdef DRM_CAP_ADDFB2_MODIFIERS
+      {"ADDFB2_MODIFIERS", DRM_CAP_ADDFB2_MODIFIERS},  // kernel 4.15
+#endif
+#ifdef DRM_CAP_SYNCOBJ
+      {"SYNCOBJ", DRM_CAP_SYNCOBJ},  // kernel 4.15
+#endif
+#ifdef DRM_CAP_SYNCOBJ_TIMELINE
+      {"SYNCOBJ_TIMELINE", DRM_CAP_SYNCOBJ_TIMELINE},  // kernel 5.0
+#endif
+#ifdef DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP
+      {"ATOMIC_ASYNC_PAGE_FLIP", DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP},  // kernel 5.0
+#endif
   };
 
   drmVersion* ver = drm->GetVersion(fd);
