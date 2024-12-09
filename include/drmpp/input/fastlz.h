@@ -1,6 +1,5 @@
 /*
-  FastLZ - Byte-aligned LZ77 compression library
-  Copyright (c) 2024 The drmpp Contributors
+FastLZ - Byte-aligned LZ77 compression library
   Copyright (C) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,80 +21,61 @@
   THE SOFTWARE.
 */
 
-#ifndef FASTLZ_H
-#define FASTLZ_H
+#ifndef DRMPP_INPUT_FASTLZ_H_
+#define DRMPP_INPUT_FASTLZ_H_
 
-#define FASTLZ_VERSION 0x000500
+#include <cstddef>
 
-#define FASTLZ_VERSION_MAJOR 0
-#define FASTLZ_VERSION_MINOR 5
-#define FASTLZ_VERSION_REVISION 0
-
-#define FASTLZ_VERSION_STRING "0.5.0"
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
+constexpr int FASTLZ_VERSION = 0x000500;
+constexpr int FASTLZ_VERSION_MAJOR = 0;
+constexpr int FASTLZ_VERSION_MINOR = 5;
+constexpr int FASTLZ_VERSION_REVISION = 0;
+constexpr char FASTLZ_VERSION_STRING[] = "0.5.0";
 
 /**
-  Compress a block of data in the input buffer and returns the size of
-  compressed block. The size of input buffer is specified by length. The
-  minimum input buffer size is 16.
-
-  The output buffer must be at least 5% larger than the input buffer
-  and can not be smaller than 66 bytes.
-
-  If the input is not compressible, the return value might be larger than
-  length (input buffer size).
-
-  The input buffer and the output buffer can not overlap.
-
-  Compression level can be specified in parameter level. At the moment,
-  only level 1 and level 2 are supported.
-  Level 1 is the fastest compression and generally useful for short data.
-  Level 2 is slightly slower but it gives better compression ratio.
-
-  Note that the compressed data, regardless of the level, can always be
-  decompressed using the function fastlz_decompress below.
-*/
-
-int fastlz_compress_level(int level,
-                          const void* input,
-                          int length,
-                          void* output);
-
-/**
-  Decompress a block of compressed data and returns the size of the
-  decompressed block. If error occurs, e.g. the compressed data is
-  corrupted or the output buffer is not large enough, then 0 (zero)
-  will be returned instead.
-
-  The input buffer and the output buffer can not overlap.
-
-  Decompression is memory safe and guaranteed not to write the output buffer
-  more than what is specified in maxout.
-
-  Note that the decompression will always work, regardless of the
-  compression level specified in fastlz_compress_level above (when
-  producing the compressed block).
+ * Compress a block of data in the input buffer and returns the size of
+ * compressed block. The size of input buffer is specified by length. The
+ * minimum input buffer size is 16.
+ *
+ * The output buffer must be at least 5% larger than the input buffer
+ * and can not be smaller than 66 bytes.
+ *
+ * If the input is not compressible, the return value might be larger than
+ * length (input buffer size).
+ *
+ * The input buffer and the output buffer can not overlap.
+ *
+ * Compression level can be specified in parameter level. At the moment,
+ * only level 1 and level 2 are supported.
+ * Level 1 is the fastest compression and generally useful for short data.
+ * Level 2 is slightly slower but it gives better compression ratio.
+ *
+ * Note that the compressed data, regardless of the level, can always be
+ * decompressed using the function fastlz_decompress below.
  */
-
-int fastlz_decompress(const void* input, int length, void* output, int maxout);
+std::size_t fastlz_compress_level(int level,
+                                  const void* input,
+                                  std::size_t length,
+                                  void* output);
 
 /**
-  DEPRECATED.
+ * Decompress a block of compressed data and returns the size of the
+ * decompressed block. If error occurs, e.g. the compressed data is
+ * corrupted or the output buffer is not large enough, then 0 (zero)
+ * will be returned instead.
+ *
+ * The input buffer and the output buffer can not overlap.
+ *
+ * Decompression is memory safe and guaranteed not to write the output buffer
+ * more than what is specified in maxout.
+ *
+ * Note that the decompression will always work, regardless of the
+ * compression level specified in fastlz_compress_level above (when
+ * producing the compressed block).
+ */
+std::size_t fastlz_decompress(const void* input,
+                              std::size_t length,
+                              void* output,
+                              std::size_t maxout);
 
-  This is similar to fastlz_compress_level above, but with the level
-  automatically chosen.
-
-  This function is deprecated and it will be completely removed in some future
-  version.
-*/
-
-int fastlz_compress(const void* input, int length, void* output);
-
-#if defined(__cplusplus)
-}
-#endif
-
-#endif /* FASTLZ_H */
+#endif  // DRMPP_INPUT_FASTLZ_H_
