@@ -9,6 +9,7 @@ executable('vk-khr-inp', [
                dl_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('vk-kms-inp', [
@@ -22,4 +23,5 @@ executable('vk-kms-inp', [
                dl_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )

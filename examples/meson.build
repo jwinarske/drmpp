@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 egl_dep = dependency('egl', include_type : 'system', required : true)
-opengl_dep = dependency('opengl', include_type : 'system', required : true)
-gles_dep = dependency('glesv2', include_type : 'system', required : true)
+glesv2_dep = dependency('glesv2', include_type : 'system', required : true)
 dl_dep = dependency('dl', required : true)
 
 if get_option('vulkan')
@@ -28,6 +27,7 @@ executable('drm-caps', ['drm_caps.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-input', ['drm_input.cc'],
@@ -37,6 +37,7 @@ executable('drm-input', ['drm_input.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-simple', ['drm_simple.cc'],
@@ -46,6 +47,7 @@ executable('drm-simple', ['drm_simple.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-compositor', ['drm_compositor.cc'],
@@ -55,6 +57,7 @@ executable('drm-compositor', ['drm_compositor.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-hotplug', ['drm_hotplug.cc'],
@@ -65,6 +68,7 @@ executable('drm-hotplug', ['drm_hotplug.cc'],
                udev_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-modes', ['drm_modes.cc'],
@@ -74,6 +78,7 @@ executable('drm-modes', ['drm_modes.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-fb', ['drm_fb.cc'],
@@ -83,6 +88,7 @@ executable('drm-fb', ['drm_fb.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-cursor', ['drm_cursor.cc'],
@@ -92,6 +98,7 @@ executable('drm-cursor', ['drm_cursor.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-lz', ['drm_lz.cc'],
@@ -101,6 +108,7 @@ executable('drm-lz', ['drm_lz.cc'],
                drmp_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 executable('drm-gbm', ['drm_gbm.cc'],
@@ -109,11 +117,12 @@ executable('drm-gbm', ['drm_gbm.cc'],
            dependencies : [
                cxxopts_dep,
                egl_dep,
-               gles_dep,
+               glesv2_dep,
                drmp_dep,
                gbm_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )
 
 subdir('snake')

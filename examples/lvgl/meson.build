@@ -28,9 +28,10 @@ executable('drm-gbm-lvgl', [
                lvgl_dep,
                lvgl_thorvg_dep,
                lvgl_demos_dep,
-               gles_dep,
+               glesv2_dep,
                egl_dep,
                dl_dep,
            ],
            install : true,
+           install_dir : get_option('bindir'),
 )

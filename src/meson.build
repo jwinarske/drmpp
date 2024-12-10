@@ -81,11 +81,10 @@ endif
 
 drmpp_lib = library('drmpp',
                     drmpp_sources,
-                    #                    cpp_args : ['-DHAVE_GETFB2'],
                     include_directories : incdirs,
                     dependencies : drmp_dep_deps,
-                    install : true)
-
+                    install : true,
+                    install_dir : get_option('libdir') + 'drmpp')
 
 drmp_dep = declare_dependency(link_with : drmpp_lib,
                               include_directories : incdirs,
