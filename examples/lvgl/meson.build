@@ -1,7 +1,8 @@
 lvgl_opt_var = cmake.subproject_options()
+lvgl_opt_var.set_install(false)
 lvgl_opt_var.add_cmake_defines(
     {
-        'CMAKE_VERBOSE_MAKEFILE' : true,
+        'CMAKE_BUILD_TYPE' : 'MinSizeRelease',
         'CMAKE_C_FLAGS' : '-DEGL_NO_X11 -Ulinux',
         'CMAKE_CXX_FLAGS' : '-DEGL_NO_X11 -Ulinux',
         'LV_CONF_PATH' : meson.current_source_dir() + '/lv_conf.h',
@@ -23,7 +24,7 @@ executable('drm-gbm-lvgl', [
            include_directories : [include_directories('.')],
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
                lvgl_dep,
                lvgl_thorvg_dep,
                lvgl_demos_dep,
