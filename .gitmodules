@@ -7,9 +7,6 @@
 [submodule "subprojects/spdlog"]
 	path = subprojects/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "subprojects/rapidjson"]
-	path = subprojects/rapidjson
-	url = https://github.com/Tencent/rapidjson.git
 [submodule "subprojects/libliftoff"]
 	path = subprojects/libliftoff
 	url = https://gitlab.freedesktop.org/emersion/libliftoff.git

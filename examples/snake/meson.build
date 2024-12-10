@@ -10,7 +10,7 @@ if opengl_dep.found()
                    cxxopts_dep,
                    egl_dep,
                    opengl_dep,
-                   drmp_dep,
+                   drmpp_dep,
                    gbm_dep,
                ],
                install : true,

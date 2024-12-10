@@ -27,7 +27,6 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <string>
 
 #include <fcntl.h>
 #include <sys/utsname.h>
@@ -38,8 +37,8 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 #include "logging/logging.h"
 #include "shared_libs/libdrm.h"

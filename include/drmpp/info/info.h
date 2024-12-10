@@ -17,10 +17,12 @@
 #ifndef INCLUDE_DRMPP_KMS_INFO_INFO_H_
 #define INCLUDE_DRMPP_KMS_INFO_INFO_H_
 
+#include <string>
 #include <vector>
 
-#include <rapidjson/document.h>
 #include <xf86drmMode.h>
+
+#include "rapidjson/document.h"
 
 namespace drmpp::info {
 /**

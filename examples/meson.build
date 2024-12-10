@@ -3,7 +3,7 @@
 
 egl_dep = dependency('egl', include_type : 'system', required : true)
 glesv2_dep = dependency('glesv2', include_type : 'system', required : true)
-dl_dep = dependency('dl', required : true)
+dl_dep = cpp.find_library('dl', required : true)
 
 if get_option('vulkan')
     imgui_proj = subproject('imgui')
@@ -13,18 +13,22 @@ endif
 
 cmake = import('cmake')
 
-opt_var = cmake.subproject_options()
-opt_var.add_cmake_defines({ 'CMAKE_VERBOSE_MAKEFILE' : true })
-opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW' })
-opt_var.add_cmake_defines({ 'CMAKE_POLICY_DEFAULT_CMP0159' : 'NEW' })
-cxxopts = cmake.subproject('cxxopts', options : opt_var)
+cxxopts_opts = cmake.subproject_options()
+cxxopts_opts.set_install(false)
+cxxopts_opts.add_cmake_defines(
+    {
+        'CMAKE_BUILD_TYPE' : 'MinSizeRelease',
+        'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW',
+        'CMAKE_POLICY_DEFAULT_CMP0159' : 'NEW'
+    })
+cxxopts = cmake.subproject('cxxopts', options : cxxopts_opts)
 cxxopts_dep = cxxopts.dependency('cxxopts')
 
 executable('drm-caps', ['drm_caps.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -34,7 +38,7 @@ executable('drm-input', ['drm_input.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -44,7 +48,7 @@ executable('drm-simple', ['drm_simple.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -54,7 +58,7 @@ executable('drm-compositor', ['drm_compositor.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -64,7 +68,7 @@ executable('drm-hotplug', ['drm_hotplug.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
                udev_dep,
            ],
            install : true,
@@ -75,7 +79,7 @@ executable('drm-modes', ['drm_modes.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -85,7 +89,7 @@ executable('drm-fb', ['drm_fb.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -95,7 +99,7 @@ executable('drm-cursor', ['drm_cursor.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -105,7 +109,7 @@ executable('drm-lz', ['drm_lz.cc'],
            include_directories : incdirs,
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
            ],
            install : true,
            install_dir : get_option('bindir'),
@@ -118,7 +122,7 @@ executable('drm-gbm', ['drm_gbm.cc'],
                cxxopts_dep,
                egl_dep,
                glesv2_dep,
-               drmp_dep,
+               drmpp_dep,
                gbm_dep,
            ],
            install : true,

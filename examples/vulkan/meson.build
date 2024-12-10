@@ -3,7 +3,7 @@ executable('vk-khr-inp', [
            ],
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
                vulkan_dep,
                vulkan_headers_dep,
                dl_dep,
@@ -17,7 +17,7 @@ executable('vk-kms-inp', [
            ],
            dependencies : [
                cxxopts_dep,
-               drmp_dep,
+               drmpp_dep,
                vulkan_dep,
                vulkan_headers_dep,
                dl_dep,
