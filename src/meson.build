@@ -84,7 +84,7 @@ drmpp_lib = library('drmpp',
                     include_directories : incdirs,
                     dependencies : drmp_dep_deps,
                     install : true,
-                    install_dir : get_option('libdir') + '/drmpp')
+                    install_dir : get_option('libdir'))
 
 drmp_dep = declare_dependency(link_with : drmpp_lib,
                               include_directories : incdirs,
