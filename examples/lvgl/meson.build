@@ -1,13 +1,11 @@
 lvgl_opt_var = cmake.subproject_options()
-lvgl_c_flags = '-DEGL_NO_X11'
-lvgl_cxx_flags = '-DEGL_NO_X11'
 lvgl_opt_var.add_cmake_defines(
     {
         'CMAKE_VERBOSE_MAKEFILE' : true,
-        'CMAKE_C_FLAGS' : lvgl_c_flags,
-        'CMAKE_CXX_FLAGS' : lvgl_cxx_flags,
-        'LV_CONF_PATH' : meson.current_source_dir() + '/lv_conf.h', })
-
+        'CMAKE_C_FLAGS' : '-DEGL_NO_X11 -Ulinux',
+        'CMAKE_CXX_FLAGS' : '-DEGL_NO_X11 -Ulinux',
+        'LV_CONF_PATH' : meson.current_source_dir() + '/lv_conf.h',
+    })
 lvgl = cmake.subproject('lvgl', options : lvgl_opt_var)
 lvgl_dep = lvgl.dependency('lvgl')
 lvgl_thorvg = cmake.subproject('lvgl', options : lvgl_opt_var)
