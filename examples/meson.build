@@ -4,6 +4,7 @@
 egl_dep = dependency('egl', include_type : 'system', required : true)
 glesv2_dep = dependency('glesv2', include_type : 'system', required : true)
 dl_dep = cpp.find_library('dl', required : true)
+math_dep = cpp.find_library('m', required : true)
 
 if get_option('vulkan')
     imgui_proj = subproject('imgui')

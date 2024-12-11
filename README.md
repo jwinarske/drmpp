@@ -1,4 +1,5 @@
 # drmpp
+
 DRM Client Library
 
 ## Pre-Requisites
@@ -29,18 +30,23 @@ Add user to the video group
 
 ### TTY Terminal
 
-The system compositor has control of the DRM driver when active.  You can suspend this access by switching to a TTY terminal.
+The system compositor has control of the DRM driver when active. You can suspend this access by switching to a TTY
+terminal.
 
 On Fedora and Ubuntu you can switch to a TTY terminal using the keyboard combo:
 
     Ctl+Alt+F3
-
 
 You can switch back to the System GUI using:
 
     Ctl+Alt+F2
 
 ### Troubleshooting
+
+If you see failure to initialize EGL display, add the user to the video group using:
+
+    sudo usermod -aG video $USER
+
 If you see permission denied errors the user has not been added to the input group:
 
     Failed to open /dev/input/event2 (Permission denied)

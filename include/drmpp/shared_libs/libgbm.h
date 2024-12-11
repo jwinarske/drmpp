@@ -32,6 +32,13 @@ struct LibGbmExports {
 
   typedef void (*BoDestroyFnPtr)(gbm_bo* bo);
 
+  typedef gbm_bo* (*BoCreateWithModifiersFnPtr)(gbm_device* gbm,
+                                                uint32_t width,
+                                                uint32_t height,
+                                                uint32_t format,
+                                                const uint64_t* modifiers,
+                                                unsigned int count);
+
   typedef gbm_bo* (*BoCreateWithModifiers2FnPtr)(gbm_device* gbm,
                                                  uint32_t width,
                                                  uint32_t height,
@@ -79,6 +86,10 @@ struct LibGbmExports {
 
   typedef void (*DeviceDestroy)(gbm_device* gbm);
 
+  typedef int (*DeviceIsFormatSupported)(gbm_device* gbm,
+                                         uint32_t format,
+                                         uint32_t flags);
+
   typedef gbm_surface* (*SurfaceCreate)(gbm_device* gbm,
                                         uint32_t width,
                                         uint32_t height,
@@ -89,6 +100,7 @@ struct LibGbmExports {
 
   BoCreateFnPtr bo_create = nullptr;
   BoDestroyFnPtr bo_destroy = nullptr;
+  BoCreateWithModifiersFnPtr bo_create_with_modifiers = nullptr;
   BoCreateWithModifiers2FnPtr bo_create_with_modifiers2 = nullptr;
   BoMapFnPtr bo_map = nullptr;
   BoUnmapFnPtr bo_unmap = nullptr;
@@ -105,6 +117,8 @@ struct LibGbmExports {
 
   CreateDevice create_device = nullptr;
   DeviceDestroy device_destroy = nullptr;
+  DeviceIsFormatSupported device_is_format_supported = nullptr;
+
   SurfaceCreate surface_create = nullptr;
   SurfaceDestroy surface_destroy = nullptr;
   SurfaceLockFrontBuffer surface_lock_front_buffer = nullptr;
