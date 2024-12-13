@@ -39,6 +39,8 @@ struct LibDrmExports {
 
   typedef int (*DrmAuthMagic)(int fd, drm_magic_t magic);
 
+  typedef int (*DrmHandleEvent)(int fd, drmEventContextPtr evctx);
+
   typedef drmVersionPtr (*DrmGetVersion)(int fd);
 
   typedef void (*DrmFreeVersion)(drmVersionPtr);
@@ -176,6 +178,7 @@ struct LibDrmExports {
   DrmFreeDevices FreeDevices = nullptr;
   DrmGetMagic GetMagic = nullptr;
   DrmAuthMagic AuthMagic = nullptr;
+  DrmHandleEvent HandleEvent = nullptr;
   DrmModeGetConnectorCurrent ModeGetConnectorCurrent = nullptr;
   DrmModeGetConnector ModeGetConnector = nullptr;
   DrmModeFreeConnector ModeFreeConnector = nullptr;

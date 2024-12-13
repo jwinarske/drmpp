@@ -3,7 +3,7 @@
 
 project('drmpp', ['c', 'cpp'],
         version : '0.1.0',
-        meson_version: '>=0.55.0',
+        meson_version : '>=0.55.0',
         license : 'Apache-2.0',
         default_options : [
             'cpp_std=c++17',
@@ -71,6 +71,55 @@ config_h = configure_file(
 config_inc = include_directories('.')
 
 #########################
+# Dependencies
+#########################
+
+drm_dep = dependency('libdrm', include_type : 'system', required : true)
+gbm_dep = dependency('gbm', include_type : 'system', required : true)
+input_dep = dependency('libinput', include_type : 'system', required : true)
+udev_dep = dependency('libudev', include_type : 'system', required : true)
+xkbcommon_dep = dependency('xkbcommon', include_type : 'system', required : true)
+
+libsync_proj = subproject('sync', default_options : ['default_library=static'])
+libsync_dep = libsync_proj.get_variable('sync_dep')
+
+bsdrm_proj = subproject('bsdrm', default_options : ['default_library=static'])
+bsdrm_dep = bsdrm_proj.get_variable('bsdrm_dep')
+
+di_proj = subproject('libdisplay-info', default_options : ['default_library=static'])
+di_dep = di_proj.get_variable('di_dep')
+
+liftoff_proj = subproject('libliftoff', default_options : ['default_library=static'])
+liftoff_dep = liftoff_proj.get_variable('liftoff')
+
+runtime = cpp.find_library('rt', required : true)
+dl = cpp.find_library('dl', required : true)
+
+rapidjson = subproject('rapidjson')
+rapidjson_dep = rapidjson.get_variable('rapidjson')
+
+cmake = import('cmake')
+
+spdlog_opts = cmake.subproject_options()
+spdlog_opts.set_install(false)
+spdlog_opts.add_cmake_defines(
+    {
+        'CMAKE_BUILD_TYPE' : 'MinSizeRelease',
+        'SPDLOG_NO_EXCEPTIONS' : true,
+        'SPDLOG_NO_THREAD_ID' : true,
+        'SPDLOG_BUILD_PIC' : true,
+        'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW'
+    }
+)
+spdlog = cmake.subproject('spdlog', options : spdlog_opts)
+spdlog_dep = spdlog.dependency('spdlog')
+
+if get_option('vulkan')
+    vulkan_headers = cmake.subproject('Vulkan-Headers')
+    vulkan_headers_dep = vulkan_headers.dependency('Vulkan-Headers')
+endif
+
+#########################
 # Source
 #########################
 
@@ -78,6 +127,10 @@ subdir('src')
 
 if get_option('examples')
     subdir('examples')
+endif
+
+if get_option('tests')
+    subdir('tests')
 endif
 
 if meson.version().version_compare('>=0.58.0')

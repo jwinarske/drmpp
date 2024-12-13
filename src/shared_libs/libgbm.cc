@@ -23,6 +23,8 @@ LibGbmExports::LibGbmExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "gbm_bo_create", &bo_create);
     GetFuncAddress(lib, "gbm_bo_destroy", &bo_destroy);
+    GetFuncAddress(lib, "gbm_bo_create_with_modifiers",
+                   &bo_create_with_modifiers);
     GetFuncAddress(lib, "gbm_bo_create_with_modifiers2",
                    &bo_create_with_modifiers2);
     GetFuncAddress(lib, "gbm_bo_map", &bo_map);
@@ -42,6 +44,8 @@ LibGbmExports::LibGbmExports(void* lib) {
 
     GetFuncAddress(lib, "gbm_create_device", &create_device);
     GetFuncAddress(lib, "gbm_device_destroy", &device_destroy);
+    GetFuncAddress(lib, "gbm_device_is_format_supported",
+                   &device_is_format_supported);
 
     GetFuncAddress(lib, "gbm_surface_create", &surface_create);
     GetFuncAddress(lib, "gbm_surface_destroy", &surface_destroy);
@@ -57,8 +61,13 @@ LibGbmExports* gbm::operator->() const {
 
 LibGbmExports* gbm::loadExports(const char* library_path = nullptr) {
   static LibGbmExports exports = [&] {
+#ifdef MINIGBM_ENABLED
+    void* lib = dlopen(library_path ? library_path : "libminigbm.so",
+                       RTLD_LAZY | RTLD_LOCAL);
+#else
     void* lib = dlopen(library_path ? library_path : "libgbm.so",
                        RTLD_LAZY | RTLD_LOCAL);
+#endif
     return LibGbmExports(lib);
   }();
 

@@ -15,3 +15,9 @@ option('lvgl-examples',
        value : true,
        description : 'build LVGL examples'
 )
+
+option('tests',
+       type : 'boolean',
+       value : true,
+       description : 'build tests'
+)

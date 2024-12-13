@@ -1,45 +1,6 @@
 # SPDX-FileCopyrightText: (c) 2024 The drmpp Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-di_proj = subproject('libdisplay-info', default_options : ['default_library=static'])
-di_dep = di_proj.get_variable('di_dep')
-
-liftoff_proj = subproject('libliftoff', default_options : ['default_library=static'])
-liftoff_dep = liftoff_proj.get_variable('liftoff')
-
-gbm_dep = dependency('gbm', include_type : 'system', required : true)
-drm_dep = dependency('libdrm', include_type : 'system', required : true)
-input_dep = dependency('libinput', include_type : 'system', required : true)
-udev_dep = dependency('libudev', include_type : 'system', required : true)
-xkbcommon_dep = dependency('xkbcommon', include_type : 'system', required : true)
-
-runtime = cpp.find_library('rt', required : true)
-dl = cpp.find_library('dl', required : true)
-
-rapidjson = subproject('rapidjson')
-rapidjson_dep = rapidjson.get_variable('rapidjson')
-
-cmake = import('cmake')
-
-if get_option('vulkan')
-    vulkan_headers = cmake.subproject('Vulkan-Headers')
-    vulkan_headers_dep = vulkan_headers.dependency('Vulkan-Headers')
-endif
-
-spdlog_opts = cmake.subproject_options()
-spdlog_opts.set_install(false)
-spdlog_opts.add_cmake_defines(
-    {
-        'CMAKE_BUILD_TYPE' : 'MinSizeRelease',
-        'SPDLOG_NO_EXCEPTIONS' : true,
-        'SPDLOG_NO_THREAD_ID' : true,
-        'SPDLOG_BUILD_PIC' : true,
-        'CMAKE_POLICY_DEFAULT_CMP0156' : 'NEW'
-    }
-)
-spdlog = cmake.subproject('spdlog', options : spdlog_opts)
-spdlog_dep = spdlog.dependency('spdlog')
-
 incdirs = [
     '../include',
     '../include/drmpp',
