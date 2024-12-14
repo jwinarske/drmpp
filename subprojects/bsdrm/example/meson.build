@@ -1,1 +1,0 @@
-executable('bstest', 'stripe.c', dependencies : bsdrm_dep)

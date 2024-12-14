@@ -31,6 +31,7 @@ LibGbmExports::LibGbmExports(void* lib) {
     GetFuncAddress(lib, "gbm_bo_unmap", &bo_unmap);
     GetFuncAddress(lib, "gbm_bo_get_handle_for_plane",
                    &bo_get_handle_for_plane);
+    GetFuncAddress(lib, "gbm_bo_get_fd_for_plane", &bo_get_fd_for_plane);
     GetFuncAddress(lib, "gbm_bo_get_plane_count", &bo_get_plane_count);
     GetFuncAddress(lib, "gbm_bo_get_offset", &bo_get_offset);
     GetFuncAddress(lib, "gbm_bo_get_stride_for_plane",
@@ -61,7 +62,9 @@ LibGbmExports* gbm::operator->() const {
 
 LibGbmExports* gbm::loadExports(const char* library_path = nullptr) {
   static LibGbmExports exports = [&] {
-#ifdef MINIGBM_ENABLED
+
+#if defined(GBM_BO_USE_SW_READ_OFTEN) && defined(GBM_BO_USE_SW_WRITE_OFTEN) && \
+    defined(GBM_BO_USE_TEXTURING)
     void* lib = dlopen(library_path ? library_path : "libminigbm.so",
                        RTLD_LAZY | RTLD_LOCAL);
 #else

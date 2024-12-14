@@ -26,6 +26,10 @@ struct LibEglExports {
 
   typedef void* (*EglGetProcAddress)(const char*);
 
+  typedef const char* (*EglQueryString)(EGLDisplay dpy, EGLint name);
+
+  typedef EGLint (*EglGetError)();
+
   typedef EGLBoolean (*EglInitialize)(EGLDisplay dpy,
                                       EGLint* major,
                                       EGLint* minor);
@@ -74,6 +78,8 @@ struct LibEglExports {
   typedef EGLBoolean (*EglTerminate)(EGLDisplay dpy);
 
   EglGetProcAddress GetProcAddress = nullptr;
+  EglQueryString QueryString = nullptr;
+  EglGetError GetError = nullptr;
   EglInitialize Initialize = nullptr;
   EglGetDisplay GetDisplay = nullptr;
   EglBindAPI BindAPI = nullptr;

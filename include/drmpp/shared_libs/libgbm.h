@@ -60,6 +60,8 @@ struct LibGbmExports {
 
   typedef gbm_bo_handle (*BoGetHandleForPlaneFnPtr)(gbm_bo* bo, int plane);
 
+  typedef int (*BoGetFdForPlaneFnPtr)(gbm_bo* bo, int plane);
+
   typedef int (*BoGetPlaneCountFnPtr)(gbm_bo* bo);
 
   typedef uint32_t (*BoGetOffsetFnPtr)(gbm_bo* bo, int plane);
@@ -105,6 +107,7 @@ struct LibGbmExports {
   BoMapFnPtr bo_map = nullptr;
   BoUnmapFnPtr bo_unmap = nullptr;
   BoGetHandleForPlaneFnPtr bo_get_handle_for_plane = nullptr;
+  BoGetFdForPlaneFnPtr bo_get_fd_for_plane = nullptr;
   BoGetPlaneCountFnPtr bo_get_plane_count = nullptr;
   BoGetOffsetFnPtr bo_get_offset = nullptr;
   BoGetStrideForPlaneFnPtr bo_get_stride_for_plane = nullptr;
