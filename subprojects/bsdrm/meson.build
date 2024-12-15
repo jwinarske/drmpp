@@ -4,7 +4,7 @@
 
 project(
     'bsdrm',
-    'c',
+    ['c', 'cpp'],
     version : '1.1.0',
     license : 'BSD',
     meson_version : '>=0.52.0',
@@ -50,4 +50,4 @@ bsdrm_dep = declare_dependency(
     dependencies : [gbm_dep, drm_dep, egl_dep, glesv2_dep],
 )
 
-subdir('example')
+subdir('tests')

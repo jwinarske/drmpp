@@ -9,6 +9,7 @@ incdirs = [
 
 drmpp_sources = [
     'cursor/xcursor.cc',
+    'egl/egl.cc',
     'kms/device.cc',
     'kms/output.cc',
     'input/seat.cc',

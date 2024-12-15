@@ -22,6 +22,8 @@
 LibEglExports::LibEglExports(void* lib) {
   if (lib != nullptr) {
     GetFuncAddress(lib, "eglGetProcAddress", &GetProcAddress);
+    GetFuncAddress(lib, "eglQueryString", &QueryString);
+    GetFuncAddress(lib, "eglGetError", &GetError);
     GetFuncAddress(lib, "eglInitialize", &Initialize);
     GetFuncAddress(lib, "eglGetDisplay", &GetDisplay);
     GetFuncAddress(lib, "eglBindAPI", &BindAPI);

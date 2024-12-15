@@ -1,0 +1,1 @@
+executable('bstest', 'stripe.cc', dependencies : bsdrm_dep)
