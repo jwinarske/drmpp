@@ -28,8 +28,8 @@ extern "C" {
 #define NUM_BYTES_PER_RGBA_PIXEL 4
 #define NUM_PLANES_NV12 2
 #define STRINGIFY(x) \
-	case x:      \
-		return #x
+    case x:      \
+        return #x
 static constexpr uint32_t width = 4;
 static constexpr uint32_t height = 4;
 static constexpr int num_color_components = 4;
@@ -443,8 +443,8 @@ static bool examine_rbg_values(uint32_t width, uint32_t height, const GLubyte *e
 	glReadPixels(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height), GL_RGBA, GL_UNSIGNED_BYTE,
 	             pixels.get());
 	check_gl_error("glReadPixels");
-	for (int j = 0; j < height; j++) {
-		for (int i = 0; i < width; i++) {
+	for (uint32_t j = 0; j < height; j++) {
+		for (uint32_t i = 0; i < width; i++) {
 			const size_t pixel_offset = j * width + i;
 			const GLubyte *actual_values_by_component =
 					&pixels[pixel_offset * num_color_components];
@@ -527,8 +527,8 @@ int main(int argc, char **argv) {
 	assert(dst_stride_uv >= width);
 	uint8_t *tmp_dst_y = bo_y_plane;
 	const uint8_t *tmp_src_y = nv12_y;
-	for (int row = 0; row < height; row++) {
-		for (int col = 0; col < width; col++) {
+	for (uint32_t row = 0; row < height; row++) {
+		for (uint32_t col = 0; col < width; col++) {
 			tmp_dst_y[col] = tmp_src_y[col];
 		}
 		tmp_dst_y += dst_stride_y;
@@ -536,8 +536,8 @@ int main(int argc, char **argv) {
 	}
 	uint8_t *tmp_dst_uv = bo_uv_plane;
 	const uint8_t *tmp_src_uv = nv12_uv;
-	for (int row = 0; row < height / 2; row++) {
-		for (int col = 0; col < width; col++) {
+	for (uint32_t row = 0; row < height / 2; row++) {
+		for (uint32_t col = 0; col < width; col++) {
 			tmp_dst_uv[col] = tmp_src_uv[col];
 		}
 		tmp_dst_uv += dst_stride_uv;

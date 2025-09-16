@@ -110,15 +110,14 @@ static constexpr gbm_bo_flags mappable_usage_list[] = {
 };
 
 static int check_bo(gbm_bo *bo) {
-  int i;
-
   CHECK(bo);
   CHECK(gbm_bo_get_width(bo) > 0);
   CHECK(gbm_bo_get_height(bo) > 0);
   CHECK(gbm_bo_get_stride(bo) >= gbm_bo_get_width(bo));
 
   const uint32_t format = gbm_bo_get_format(bo);
-  for (i = 0; i < std::size(format_list); i++)
+  size_t i = 0;
+  for (; i < ARRAY_SIZE(format_list); i++)
     if (format_list[i] == format)
       break;
   CHECK(i < ARRAY_SIZE(format_list));
@@ -457,12 +456,12 @@ static int test_import_modifier() {
       const size_t num_planes = gbm_bo_get_plane_count(bo1);
       fd_data.num_fds = num_planes;
 
-      for (auto p = 0; p < num_planes; p++) {
-        fd_data.fds[p] = gbm_bo_get_fd_for_plane(bo1, p);
+      for (size_t p = 0; p < num_planes; p++) {
+        fd_data.fds[p] = gbm_bo_get_fd_for_plane(bo1, static_cast<int>(p));
         CHECK(fd_data.fds[p] >= 0);
 
-        fd_data.strides[p] = static_cast<int>(gbm_bo_get_stride_for_plane(bo1, p));
-        fd_data.offsets[p] = static_cast<int>(gbm_bo_get_offset(bo1, p));
+        fd_data.strides[p] = static_cast<int>(gbm_bo_get_stride_for_plane(bo1, static_cast<int>(p)));
+        fd_data.offsets[p] = static_cast<int>(gbm_bo_get_offset(bo1, static_cast<int>(p)));
       }
 
       fd_data.modifier = gbm_bo_get_modifier(bo1);
@@ -480,14 +479,14 @@ static int test_import_modifier() {
       CHECK(fd_data.height == gbm_bo_get_height(bo2));
       CHECK(fd_data.modifier == gbm_bo_get_modifier(bo2));
 
-      for (auto p = 0; p < num_planes; p++) {
-        CHECK(fd_data.strides[p] == gbm_bo_get_stride_for_plane(bo2, p));
-        CHECK(fd_data.offsets[p] == gbm_bo_get_offset(bo2, p));
+      for (size_t p = 0; p < num_planes; p++) {
+        CHECK(static_cast<uint32_t>(fd_data.strides[p]) == gbm_bo_get_stride_for_plane(bo2, p));
+        CHECK(static_cast<uint32_t>(fd_data.offsets[p]) == gbm_bo_get_offset(bo2, p));
       }
 
       gbm_bo_destroy(bo2);
 
-      for (auto p = 0; p < num_planes; p++) {
+      for (size_t p = 0; p < num_planes; p++) {
         close(fd_data.fds[p]);
       }
     }
@@ -604,9 +603,9 @@ static int test_dmabuf_map() {
   ret = HANDLE_EINTR(ioctl(prime_fd, DMA_BUF_IOCTL_SYNC, &sync_start));
   CHECK(ret == 0);
 
-  for (y = 0; y < height; ++y)
-    for (x = 0; x < width; ++x)
-      CHECK(pixel[y * stride_pixels + x] == ((y << 16) | x));
+  for (int y = 0; y < height; ++y)
+    for (int x = 0; x < width; ++x)
+      CHECK(pixel[y * stride_pixels + x] == static_cast<uint32_t>((y << 16) | x));
 
   sync_end.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ;
   ret = HANDLE_EINTR(ioctl(prime_fd, DMA_BUF_IOCTL_SYNC, &sync_end));
@@ -627,9 +626,9 @@ static int test_dmabuf_map() {
 
   pixel = static_cast<uint32_t *>(addr);
 
-  for (y = 0; y < height; ++y)
-    for (x = 0; x < width; ++x)
-      CHECK(pixel[y * stride_pixels + x] == ((y << 16) | x));
+  for (int y = 0; y < height; ++y)
+    for (int x = 0; x < width; ++x)
+      CHECK(pixel[y * stride_pixels + x] == static_cast<uint32_t>((y << 16) | x));
 
   gbm_bo_unmap(bo, map_data);
   gbm_bo_destroy(bo);
@@ -681,9 +680,9 @@ static int test_gem_map_tiling(const gbm_bo_flags buffer_create_flag) {
   pixel_size = sizeof(*pixel);
   stride_pixels = stride / pixel_size;
 
-  for (y = 0; y < height; ++y)
-    for (x = 0; x < width; ++x)
-      CHECK(pixel[y * stride_pixels + x] == ((y << 16) | x));
+  for (int y = 0; y < height; ++y)
+    for (int x = 0; x < width; ++x)
+      CHECK(pixel[y * stride_pixels + x] == static_cast<uint32_t>((y << 16) | x));
 
   gbm_bo_unmap(bo, map_data);
   gbm_bo_destroy(bo);
@@ -777,8 +776,8 @@ int main(int argc, char *argv[]) {
   if (strcmp(gbm_device_get_backend_name(gbm_device), "tegra") != 0) {
     for (const auto i: mappable_usage_list) {
       result &= test_gem_map_tiling(i);
-      for (int j = 0; j < std::size(mappable_format_list); ++j)
-        result &= test_gem_map_format(j, i);
+      for (size_t j = 0; j < ARRAY_SIZE(mappable_format_list); ++j)
+        result &= test_gem_map_format(static_cast<int>(j), i);
     }
 
     result &= test_dmabuf_map();

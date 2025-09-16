@@ -12,7 +12,7 @@ option('examples',
 
 option('lvgl-examples',
        type : 'boolean',
-       value : true,
+       value : false,
        description : 'build LVGL examples'
 )
 

@@ -1,7 +1,9 @@
 #include <csignal>
-#include <cxxopts.hpp>
-#include <filesystem>
+#include <cstdint>
 #include <memory>
+
+#include <cxxopts.hpp>
+
 #include "drmpp/logging/logging.h"
 #include "drmpp/utils/udev_monitor.h"
 #include "drmpp/utils/utils.h"

@@ -86,7 +86,7 @@ static void gamma_step(uint16_t *table, const int size) {
   }
 }
 
-static void gamma_piecewise_linear(uint16_t *table, const int size, const float joint) {
+static void gamma_piecewise_linear(uint16_t *table, size_t size, const float joint) {
   if (table == nullptr)
     return;
 
@@ -97,7 +97,7 @@ static void gamma_piecewise_linear(uint16_t *table, const int size, const float 
   const float joint_v = powf(joint, gamma);
   // |slope| is the slope of the linear part.
   const float slope = (1 - joint_v) / (1 - joint);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     float v = static_cast<float>(i) / static_cast<float>(size - 1);
 
     if (i < joint_i)
@@ -117,7 +117,7 @@ static const char *gamma_name(const int gamma_table_id) {
   };
   constexpr size_t max_gamma_table_id =
       sizeof(table_names) / sizeof(table_names[0]);
-  if (gamma_table_id >= max_gamma_table_id)
+  if (gamma_table_id >= static_cast<int>(max_gamma_table_id))
     return nullptr;
   return table_names[gamma_table_id];
 }
@@ -240,9 +240,9 @@ static int set_gamma(const int fd,
       gamma_step(b, gamma_size);
       break;
     case TABLE_PIECEWISE_HDR:
-      gamma_piecewise_linear(r, gamma_size, parameter);
-      gamma_piecewise_linear(g, gamma_size, parameter);
-      gamma_piecewise_linear(b, gamma_size, parameter);
+  gamma_piecewise_linear(r, static_cast<size_t>(gamma_size), parameter);
+  gamma_piecewise_linear(g, static_cast<size_t>(gamma_size), parameter);
+  gamma_piecewise_linear(b, static_cast<size_t>(gamma_size), parameter);
       break;
     default:
       break;
